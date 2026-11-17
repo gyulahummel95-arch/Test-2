@@ -106,6 +106,14 @@ class WebRenderer(
         }
     }
 
+    /** Führt JavaScript in der angezeigten Seite aus (auch für Tests). */
+    fun evaluate(js: String, callback: (String?) -> Unit) {
+        main.post {
+            val wv = presentation?.webView
+            if (wv == null) callback(null) else wv.evaluateJavascript(js) { callback(it) }
+        }
+    }
+
     fun release() {
         main.post { releaseDisplay() }
     }

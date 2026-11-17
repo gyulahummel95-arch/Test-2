@@ -14,9 +14,46 @@ jobs:
           distribution: temurin
           java-version: "17"
       - uses: gradle/actions/setup-gradle@v4
-      - name: Build debug APK
-        run: chmod +x gradlew && ./gradlew assembleDebug --no-daemon
+      - name: Build debug APK and run unit tests
+        run: chmod +x gradlew && ./gradlew assembleDebug testDebugUnitTest --no-daemon
       - uses: actions/upload-artifact@v4
         with:
           name: AutoStream-debug-apk
           path: app/build/outputs/apk/debug/*.apk
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: unit-test-report
+          path: app/build/reports/tests/
+
+  emulator-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - name: Run tests on emulator
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 33
+          target: google_apis
+          arch: x86_64
+          emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim
+          disable-animations: true
+          script: chmod +x gradlew ci/run-instrumented.sh && ./ci/run-instrumented.sh
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: emulator-test-output
+          path: |
+            test-output/
+            app/build/reports/androidTests/

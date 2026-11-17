@@ -94,11 +94,7 @@ class MotionMonitor(
     }
 
     private fun publish() {
-        val state = when {
-            carState == MotionState.MOVING || gpsState == MotionState.MOVING -> MotionState.MOVING
-            carState == MotionState.STOPPED || gpsState == MotionState.STOPPED -> MotionState.STOPPED
-            else -> MotionState.UNKNOWN
-        }
+        val state = combine(carState, gpsState)
         if (state != published) {
             published = state
             onChange(state)
@@ -106,6 +102,13 @@ class MotionMonitor(
     }
 
     companion object {
+        /** Fahrt gewinnt immer; Stillstand nur, wenn keine Quelle Fahrt meldet. */
+        fun combine(car: MotionState, gps: MotionState): MotionState = when {
+            car == MotionState.MOVING || gps == MotionState.MOVING -> MotionState.MOVING
+            car == MotionState.STOPPED || gps == MotionState.STOPPED -> MotionState.STOPPED
+            else -> MotionState.UNKNOWN
+        }
+
         private const val TAG = "MotionMonitor"
         private const val CAR_THRESHOLD_MPS = 1.0f   // ~3,6 km/h
         private const val GPS_THRESHOLD_MPS = 2.0f   // ~7 km/h (GPS-Rauschen)
