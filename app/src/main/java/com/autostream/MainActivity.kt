@@ -16,6 +16,8 @@ import android.view.ViewGroup.LayoutParams.WRAP_CONTENT
 import android.widget.Button
 import android.widget.EditText
 import android.widget.LinearLayout
+import android.widget.RadioButton
+import android.widget.RadioGroup
 import android.widget.ScrollView
 import android.widget.Switch
 import android.widget.TextView
@@ -70,6 +72,36 @@ class MainActivity : Activity() {
             isChecked = Shortcuts.audioWhileDriving(this@MainActivity)
             setOnCheckedChangeListener { _, checked ->
                 Shortcuts.setAudioWhileDriving(this@MainActivity, checked)
+            }
+        })
+
+        root.addView(header("Design im Auto"))
+        root.addView(TextView(this).apply {
+            text = "Tipp: Im Auto 5× schnell auf die Uhr tippen wechselt das Design."
+        })
+        val themeGroup = RadioGroup(this)
+        Shortcuts.THEMES.forEach { (id, label) ->
+            themeGroup.addView(RadioButton(this).apply {
+                text = label
+                tag = id
+                isChecked = Shortcuts.theme(this@MainActivity) == id
+                setOnClickListener {
+                    if (id == "custom" && !Backgrounds.exists(context)) pickBackground()
+                    else Shortcuts.setTheme(context, id)
+                }
+            })
+        }
+        root.addView(themeGroup)
+        root.addView(Button(this).apply {
+            text = "Hintergrundbild aus Galerie wählen"
+            setOnClickListener { pickBackground() }
+        })
+        root.addView(Button(this).apply {
+            text = "Hintergrundbild entfernen"
+            setOnClickListener {
+                Backgrounds.clear(context)
+                if (Shortcuts.theme(context) == "custom") Shortcuts.setTheme(context, "standard")
+                recreate()
             }
         })
 
@@ -139,6 +171,23 @@ class MainActivity : Activity() {
         if (checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             Toast.makeText(this, "Bitte Standort erlauben – sonst bleibt die Videowiedergabe im Auto gesperrt.", Toast.LENGTH_LONG).show()
         }
+    }
+
+    private fun pickBackground() {
+        @Suppress("DEPRECATION")
+        startActivityForResult(Intent(Intent.ACTION_GET_CONTENT).setType("image/*"), REQ_BACKGROUND)
+    }
+
+    @Deprecated("Deprecated in Java")
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        @Suppress("DEPRECATION")
+        super.onActivityResult(requestCode, resultCode, data)
+        val uri = data?.data
+        if (requestCode != REQ_BACKGROUND || resultCode != RESULT_OK || uri == null) return
+        val ok = try { Backgrounds.saveFromUri(this, uri) } catch (e: Exception) { false }
+        if (ok) Shortcuts.setTheme(this, "custom")
+        Toast.makeText(this, if (ok) "Hintergrundbild gesetzt" else "Bild konnte nicht geladen werden", Toast.LENGTH_SHORT).show()
+        recreate()
     }
 
     private fun refreshDiagnostics() {
@@ -211,5 +260,9 @@ class MainActivity : Activity() {
             })
             list.addView(row, LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT))
         }
+    }
+
+    companion object {
+        private const val REQ_BACKGROUND = 42
     }
 }

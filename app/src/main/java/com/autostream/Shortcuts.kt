@@ -12,6 +12,17 @@ object Shortcuts {
     private const val KEY_LIST = "shortcuts"
     private const val KEY_DESKTOP = "desktop_mode"
     private const val KEY_AUDIO_DRIVING = "audio_while_driving"
+    private const val KEY_THEME = "theme"
+
+    /** Designs der Startseite (IDs wie in launcher.html). */
+    val THEMES = linkedMapOf(
+        "standard" to "Standard",
+        "upside" to "Upside Down (Lichterkette, Neon)",
+        "squid" to "Squid (Pink & Grün, ○ △ □)",
+        "lab" to "Lab (Blutspritzer, Objektträger)",
+        "apocalypse" to "Apocalypse (Endzeit, Krähe)",
+        "custom" to "Eigenes Hintergrundbild",
+    )
 
     private val defaults = listOf(
         Shortcut("Netflix", "https://www.netflix.com/browse"),
@@ -51,6 +62,12 @@ object Shortcuts {
 
     fun setAudioWhileDriving(c: Context, value: Boolean) =
         prefs(c).edit().putBoolean(KEY_AUDIO_DRIVING, value).apply()
+
+    fun theme(c: Context): String = prefs(c).getString(KEY_THEME, "standard") ?: "standard"
+
+    fun setTheme(c: Context, value: String) {
+        if (value in THEMES) prefs(c).edit().putString(KEY_THEME, value).apply()
+    }
 
     fun setDesktopMode(c: Context, value: Boolean) =
         prefs(c).edit().putBoolean(KEY_DESKTOP, value).apply()

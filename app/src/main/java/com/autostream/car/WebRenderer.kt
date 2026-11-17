@@ -27,6 +27,7 @@ import android.widget.FrameLayout
 import android.widget.TextView
 import androidx.car.app.SurfaceCallback
 import androidx.car.app.SurfaceContainer
+import com.autostream.Backgrounds
 import com.autostream.Diagnostics
 import com.autostream.Shortcuts
 import com.autostream.WebConfig
@@ -96,6 +97,19 @@ class WebRenderer(
             }
             return arr.toString()
         }
+
+        @JavascriptInterface
+        fun theme(): String = Shortcuts.theme(context)
+
+        @JavascriptInterface
+        fun setTheme(name: String) {
+            main.post {
+                if (presentation?.webView?.url?.startsWith(LAUNCHER_URL) == true) Shortcuts.setTheme(context, name)
+            }
+        }
+
+        @JavascriptInterface
+        fun background(): String = Backgrounds.dataUrl(context)
 
         @JavascriptInterface
         fun openSearch() {

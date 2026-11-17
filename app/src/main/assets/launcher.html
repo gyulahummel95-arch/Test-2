@@ -70,9 +70,91 @@
   .icon img { width: 70%; height: 70%; object-fit: contain; }
   .name { font-size: calc(var(--t) * .12); font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .host { font-size: calc(var(--t) * .075); opacity: .7; margin-top: calc(var(--t) * .015); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+  /* ---------- Gemeinsame Effekte ---------- */
+  header, main { position: relative; z-index: 2; }
+  #fx { position: fixed; inset: 0; z-index: 0; pointer-events: none; overflow: hidden; }
+  .time { background: linear-gradient(180deg, #fff, #b9c7e6); -webkit-background-clip: text; color: transparent; }
+  .icon { box-shadow: 0 calc(var(--t) * .02) calc(var(--t) * .06) rgba(0,0,0,.3); }
+  .tile { animation: rise .55s cubic-bezier(.2,.8,.2,1) both; animation-delay: calc(var(--i) * 60ms);
+          border: 1px solid rgba(255,255,255,.10); }
+  @keyframes rise { from { opacity: 0; transform: translateY(14px) scale(.98); } to { opacity: 1; transform: none; } }
+  .orb { position: absolute; border-radius: 50%; opacity: .55; animation: drift 28s ease-in-out infinite alternate; }
+  @keyframes drift { to { transform: translate(8vw, 6vh) scale(1.15); } }
+  #toast { position: fixed; left: 50%; bottom: 6%; transform: translateX(-50%); z-index: 9;
+           padding: calc(1.4 * var(--u)) calc(3 * var(--u)); border-radius: 99px; background: rgba(0,0,0,.75);
+           color: #fff; font-size: calc(3 * var(--u)); opacity: 0; transition: opacity .3s; pointer-events: none; }
+  #toast.show { opacity: 1; }
+  .clock { cursor: pointer; }
+
+  /* ---------- Upside Down ---------- */
+  body[data-theme=upside] { background: radial-gradient(120% 100% at 50% 0%, #2a0606 0%, #120303 45%, #050101 100%); }
+  body[data-theme=upside] .time { background: none; color: transparent; -webkit-text-stroke: 1.5px #ff3b30;
+      font-family: Georgia, "Times New Roman", serif; font-weight: 700;
+      text-shadow: 0 0 calc(1.2 * var(--u)) rgba(255,40,30,.9), 0 0 calc(3 * var(--u)) rgba(255,0,0,.5);
+      animation: neon 6s infinite; }
+  @keyframes neon { 0%, 92%, 100% { opacity: 1; } 93% { opacity: .35; } 94% { opacity: 1; } 96% { opacity: .5; } }
+  body[data-theme=upside] .date { color: #d9a3a3; }
+  body[data-theme=upside] .tile { border-color: rgba(255,60,50,.45);
+      box-shadow: 0 0 calc(var(--t) * .12) rgba(255,30,20,.25), 0 calc(var(--t) * .04) calc(var(--t) * .12) rgba(0,0,0,.6); }
+  body[data-theme=upside] .search { border-color: rgba(255,60,50,.35); }
+  .wire { position: absolute; left: 0; right: 0; top: 0; height: calc(7 * var(--u)); }
+  .bulb { position: absolute; width: calc(1.3 * var(--u)); height: calc(2 * var(--u)); border-radius: 50% 50% 45% 45%;
+          animation: blink 3s infinite; }
+  @keyframes blink { 0%, 100% { opacity: 1; filter: brightness(1.3); } 50% { opacity: .25; filter: none; } }
+  .spore { position: absolute; width: 3px; height: 3px; border-radius: 50%; background: rgba(255,255,255,.55);
+           animation: float 18s linear infinite; }
+  @keyframes float { from { transform: translateY(0); opacity: 0; } 10% { opacity: .8; } to { transform: translateY(-110vh) translateX(4vw); opacity: 0; } }
+
+  /* ---------- Squid ---------- */
+  body[data-theme=squid] { background: radial-gradient(110% 110% at 100% 100%, #0d5f56 0%, #07302c 45%, #041a18 100%); }
+  body[data-theme=squid] .time { background: none; color: #ff2d7a; text-shadow: 0 0 calc(2 * var(--u)) rgba(255,45,122,.5); }
+  body[data-theme=squid] .date { color: #9fd9cf; }
+  body[data-theme=squid] .tile { border-radius: calc(var(--t) * .06); border: 2px solid rgba(255,45,122,.35); }
+  body[data-theme=squid] .search { border-color: rgba(255,45,122,.4); border-radius: calc(1.2 * var(--u)); }
+  .shape { position: absolute; fill: none; stroke: rgba(255,45,122,.16); stroke-width: 3; animation: spin 60s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .tag { position: absolute; right: 2.5vw; bottom: 2vh; font: 700 calc(3 * var(--u)) "Roboto Mono", monospace;
+         color: rgba(159,217,207,.35); letter-spacing: .1em; }
+
+  /* ---------- Lab ---------- */
+  body[data-theme=lab] { background: linear-gradient(160deg, #15161a 0%, #0b0b0d 60%, #000 100%); }
+  body[data-theme=lab] .time { background: none; color: #f1f1f1; font-weight: 200; }
+  body[data-theme=lab] .time b { color: #b30000; font-weight: 400; }
+  body[data-theme=lab] .tile { background: linear-gradient(145deg, #23252b, #141519); border-left: 4px solid var(--c1); }
+  body[data-theme=lab] .search { background: rgba(255,255,255,.05); }
+  .drop { position: absolute; border-radius: 50%; background: radial-gradient(circle at 35% 35%, #c00000, #5e0000 70%); }
+  .slides { position: absolute; left: 2.5vw; bottom: 2.2vh; display: flex; gap: calc(.8 * var(--u)); opacity: .5; }
+  .slide { width: calc(6 * var(--u)); height: calc(2.2 * var(--u)); border: 1px solid rgba(255,255,255,.5);
+           border-radius: 2px; background: rgba(255,255,255,.08); display: grid; place-items: center; }
+  .slide::after { content: ""; width: calc(.9 * var(--u)); height: calc(.9 * var(--u)); border-radius: 50%; background: #9a0000; }
+
+  /* ---------- Apocalypse ---------- */
+  body[data-theme=apocalypse] { background:
+      repeating-radial-gradient(circle at 30% 20%, rgba(255,255,255,.015) 0 1px, transparent 1px 3px),
+      linear-gradient(170deg, #2c2a1c 0%, #1a1912 55%, #0d0c08 100%); }
+  body[data-theme=apocalypse] .time { background: none; color: #e6dfc8; text-transform: uppercase; letter-spacing: .04em;
+      font-family: Impact, "Arial Narrow", sans-serif; font-weight: 400; }
+  body[data-theme=apocalypse] .date { color: #a39e85; }
+  body[data-theme=apocalypse] .tile { filter: saturate(.45) sepia(.3) contrast(1.05); border-color: rgba(230,223,200,.15); }
+  body[data-theme=apocalypse] .search { background: rgba(230,223,200,.06); }
+  .crow { position: absolute; top: 18%; width: calc(7 * var(--u)); fill: #0a0a08; animation: fly 40s linear infinite; }
+  @keyframes fly { from { transform: translateX(-12vw) translateY(0); } 50% { transform: translateX(50vw) translateY(-4vh); }
+                   to { transform: translateX(112vw) translateY(2vh); } }
+  .days { position: absolute; right: 2.5vw; bottom: 2vh; font: calc(2.6 * var(--u)) Impact, sans-serif;
+          color: rgba(230,223,200,.4); letter-spacing: .08em; }
+
+  /* ---------- Eigenes Bild ---------- */
+  body[data-theme=custom] { background: #000 var(--bgimg) center / cover no-repeat; }
+  body[data-theme=custom] #fx { background: linear-gradient(180deg, rgba(0,0,0,.65) 0%, rgba(0,0,0,.25) 40%, rgba(0,0,0,.55) 100%); }
+  body[data-theme=custom] .tile { background: linear-gradient(145deg, color-mix(in srgb, var(--c1) 70%, transparent), rgba(0,0,0,.45)); }
+
+  @media (prefers-reduced-motion: reduce) { * { animation: none !important; } }
 </style>
 </head>
-<body>
+<body data-theme="standard">
+<div id="fx"></div>
+<div id="toast"></div>
 <header>
   <div class="clock">
     <div class="time" id="time">--:--</div>
@@ -108,6 +190,7 @@
     items.forEach(function (s, i) {
       var host = hostOf(s.url), c = colorsFor(host, i);
       var tile = el('div', 'tile');
+      tile.style.setProperty('--i', i);
       tile.style.setProperty('--c1', c[0]); tile.style.setProperty('--c2', c[1]);
       var icon = el('div', 'icon', s.name.charAt(0).toUpperCase());
       var img = new Image();
@@ -124,7 +207,8 @@
 
   function tick() {
     var d = new Date();
-    document.getElementById('time').textContent = d.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
+    var t = d.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' }).split(':');
+    document.getElementById('time').innerHTML = t[0] + '<b>:</b>' + t[1];
     document.getElementById('date').textContent = d.toLocaleDateString('de-DE', { weekday: 'long', day: 'numeric', month: 'long' });
   }
   tick(); setInterval(tick, 10000);
@@ -168,6 +252,119 @@
     layout();
   };
   window.addEventListener('resize', layout);
+
+
+  /* ---------- Themes & Easter Eggs ---------- */
+  var THEMES = ['standard', 'upside', 'squid', 'lab', 'apocalypse', 'custom'];
+  var THEME_NAMES = { standard: 'Standard', upside: 'Upside Down', squid: 'Squid', lab: 'Lab',
+                      apocalypse: 'Apocalypse', custom: 'Eigenes Bild' };
+  var SVG = 'http://www.w3.org/2000/svg';
+  function rand(a, b) { return a + Math.random() * (b - a); }
+  function svg(viewBox, inner, cls) {
+    var e = document.createElementNS(SVG, 'svg'); e.setAttribute('viewBox', viewBox);
+    if (cls) e.setAttribute('class', cls); e.innerHTML = inner; return e;
+  }
+
+  var FX = {
+    standard: function (fx) {
+      [['#2f6bff', 8, 10, 46], ['#8a3dff', 62, 55, 52], ['#00b3a4', 75, -8, 30]].forEach(function (o, i) {
+        var d = el('div', 'orb');
+        d.style.cssText = 'left:' + o[1] + 'vw;top:' + o[2] + 'vh;width:' + o[3] + 'vw;height:' + o[3] + 'vw;' +
+          'background:radial-gradient(circle,' + o[0] + '55 0%,transparent 65%);animation-delay:-' + (i * 7) + 's';
+        fx.appendChild(d);
+      });
+    },
+    upside: function (fx) {
+      // Lichterkette quer oben
+      fx.appendChild(svg('0 0 100 10', '<path d="M0 2 Q12 7 25 3 T50 3 T75 3 T100 2" stroke="#222" stroke-width=".5" fill="none"/>', 'wire'));
+      var colors = ['#ff3b30', '#ffd60a', '#30d158', '#0a84ff', '#ff9f0a', '#bf5af2'];
+      for (var i = 0; i < 18; i++) {
+        var b = el('div', 'bulb'), c = colors[i % colors.length];
+        b.style.cssText = 'left:' + (3 + i * 5.4) + 'vw;top:calc(' + (2.2 + Math.sin(i * 1.1) * 1.2) + ' * var(--u));' +
+          'background:' + c + ';box-shadow:0 0 calc(1.5 * var(--u)) ' + c + ';animation-delay:-' + rand(0, 3).toFixed(2) + 's;' +
+          'animation-duration:' + rand(2, 5).toFixed(2) + 's';
+        fx.appendChild(b);
+      }
+      for (var j = 0; j < 22; j++) {
+        var sp = el('div', 'spore');
+        sp.style.cssText = 'left:' + rand(0, 100) + 'vw;top:' + rand(60, 110) + 'vh;animation-delay:-' + rand(0, 18).toFixed(1) + 's;' +
+          'animation-duration:' + rand(14, 26).toFixed(1) + 's';
+        fx.appendChild(sp);
+      }
+    },
+    squid: function (fx) {
+      var shapes = ['<circle cx="50" cy="50" r="40"/>', '<polygon points="50,10 92,86 8,86"/>', '<rect x="12" y="12" width="76" height="76"/>'];
+      [[6, 58, 22], [40, 70, 16], [78, 48, 26], [62, 4, 12], [22, 18, 10]].forEach(function (p, i) {
+        var e = svg('0 0 100 100', shapes[i % 3], 'shape');
+        e.style.cssText = 'left:' + p[0] + 'vw;top:' + p[1] + 'vh;width:' + p[2] + 'vmin;height:' + p[2] + 'vmin;' +
+          'animation-duration:' + (50 + i * 13) + 's;animation-direction:' + (i % 2 ? 'reverse' : 'normal');
+        fx.appendChild(e);
+      });
+      fx.appendChild(el('div', 'tag', '456'));
+    },
+    lab: function (fx) {
+      // Blutspritzer in den Ecken – zufällig, aber dezent
+      [[92, 88], [4, 92], [96, 6]].forEach(function (c) {
+        for (var i = 0; i < 9; i++) {
+          var d = el('div', 'drop'), r = rand(0.4, i ? 1.6 : 3.2);
+          d.style.cssText = 'left:calc(' + c[0] + 'vw + ' + rand(-5, 5).toFixed(1) + 'vmin);top:calc(' + c[1] + 'vh + ' +
+            rand(-5, 5).toFixed(1) + 'vmin);width:' + r + 'vmin;height:' + r + 'vmin;opacity:' + rand(.35, .8).toFixed(2);
+          fx.appendChild(d);
+        }
+      });
+      var slides = el('div', 'slides');
+      for (var k = 0; k < 6; k++) slides.appendChild(el('div', 'slide'));
+      fx.appendChild(slides);
+    },
+    apocalypse: function (fx) {
+      var crow = svg('0 0 64 32', '<path d="M2 18 Q14 6 24 14 Q30 10 34 12 Q40 4 62 8 Q46 12 42 18 Q36 26 28 22 Q20 26 2 18Z"/>', 'crow');
+      fx.appendChild(crow);
+      var first = null;
+      try { first = localStorage.getItem('firstDay'); if (!first) { first = String(Date.now()); localStorage.setItem('firstDay', first); } } catch (e) {}
+      var days = first ? Math.floor((Date.now() - Number(first)) / 864e5) + 1 : 1;
+      fx.appendChild(el('div', 'days', 'TAG ' + days + ' – ÜBERLEBT'));
+    },
+    custom: function () {}
+  };
+
+  var currentTheme = 'standard';
+  function applyTheme(name) {
+    if (THEMES.indexOf(name) < 0) name = 'standard';
+    if (name === 'custom') {
+      var bg = window.AutoStream ? AutoStream.background() : '';
+      if (!bg) name = 'standard';
+      else document.documentElement.style.setProperty('--bgimg', 'url("' + bg + '")');
+    }
+    currentTheme = name;
+    document.body.setAttribute('data-theme', name);
+    var fx = document.getElementById('fx');
+    fx.innerHTML = '';
+    (FX[name] || FX.standard)(fx);
+  }
+
+  function toast(text) {
+    var t = document.getElementById('toast');
+    t.textContent = text; t.classList.add('show');
+    clearTimeout(toast.timer); toast.timer = setTimeout(function () { t.classList.remove('show'); }, 1600);
+  }
+
+  // Easter Egg: 5× schnell auf die Uhr tippen wechselt das Design
+  var taps = [];
+  document.querySelector('.clock').addEventListener('click', function () {
+    var now = Date.now();
+    taps = taps.filter(function (t) { return now - t < 2500; }); taps.push(now);
+    if (taps.length >= 5) {
+      taps = [];
+      var hasBg = window.AutoStream && AutoStream.background();
+      var i = THEMES.indexOf(currentTheme), next;
+      do { i = (i + 1) % THEMES.length; next = THEMES[i]; } while (next === 'custom' && !hasBg);
+      applyTheme(next);
+      if (window.AutoStream) AutoStream.setTheme(next);
+      toast(THEME_NAMES[next]);
+    }
+  });
+
+  applyTheme(window.AutoStream ? AutoStream.theme() : 'standard');
 
   var data = [];
   try { data = JSON.parse(window.AutoStream ? AutoStream.shortcuts() : '[]'); } catch (e) {}

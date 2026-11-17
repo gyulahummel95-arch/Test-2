@@ -333,6 +333,63 @@ class WebRendererTest {
         assertTrue("Diagnose fehlt: $surface", surface?.contains("1280 × 720, 213 dpi") == true)
     }
 
+    /** Alle Designs: Layout bleibt korrekt, Screenshot je Design. */
+    @Test fun allThemesKeepLayout() {
+        try {
+            for (theme in listOf("standard", "upside", "squid", "lab", "apocalypse")) {
+                Shortcuts.setTheme(context, theme)
+                start(WebRenderer.LAUNCHER_URL, width = 1920, height = 1080, dpi = 320)
+                SystemClock.sleep(3500)
+                assertTrue("Design $theme nicht aktiv",
+                    js("document.body.getAttribute('data-theme')") == "\"$theme\"")
+                checkLauncherLayout("Design $theme")
+                save("30_design_$theme")
+                stopCurrent()
+            }
+        } finally {
+            Shortcuts.setTheme(context, "standard")
+        }
+    }
+
+    /** Easter Egg: 5× auf die Uhr tippen wechselt das Design und speichert es. */
+    @Test fun fiveTapsOnClockSwitchTheme() {
+        Shortcuts.setTheme(context, "standard")
+        try {
+            val r = start(WebRenderer.LAUNCHER_URL)
+            SystemClock.sleep(3000)
+            val (x, y) = tileCenter(".clock")
+            repeat(5) {
+                r.onClick(x, y)
+                SystemClock.sleep(250)
+            }
+            SystemClock.sleep(1000)
+            assertTrue("Design nicht gewechselt",
+                js("document.body.getAttribute('data-theme')") == "\"upside\"")
+            assertTrue("Design nicht gespeichert", Shortcuts.theme(context) == "upside")
+        } finally {
+            Shortcuts.setTheme(context, "standard")
+        }
+    }
+
+    @Test fun customBackgroundIsShown() {
+        val bmp = Bitmap.createBitmap(64, 36, Bitmap.Config.ARGB_8888).apply { eraseColor(Color.rgb(0, 200, 0)) }
+        com.autostream.Backgrounds.save(context, bmp)
+        Shortcuts.setTheme(context, "custom")
+        try {
+            start(WebRenderer.LAUNCHER_URL)
+            SystemClock.sleep(3000)
+            assertTrue("Eigenes Bild nicht aktiv",
+                js("document.body.getAttribute('data-theme')") == "\"custom\"")
+            val corner = frame()?.getPixel(w - 5, h - 5)
+            assertTrue("Hintergrundbild nicht sichtbar: ${corner?.let { Integer.toHexString(it) }}",
+                corner != null && Color.green(corner) > Color.red(corner) + 30)
+            save("31_eigenes_bild")
+        } finally {
+            com.autostream.Backgrounds.clear(context)
+            Shortcuts.setTheme(context, "standard")
+        }
+    }
+
     /** Info-Test: Welche Widevine-Stufen bietet die WebView auf dem Autodisplay? */
     @Test fun reportDrmSupport() {
         start("https://example.com")
