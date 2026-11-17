@@ -11,6 +11,6 @@ class StreamCarAppService : CarAppService() {
     override fun createHostValidator(): HostValidator = HostValidator.ALLOW_ALL_HOSTS_VALIDATOR
 
     override fun onCreateSession(): Session = object : Session() {
-        override fun onCreateScreen(intent: Intent): Screen = HomeScreen(carContext)
+        override fun onCreateScreen(intent: Intent): Screen = BrowserScreen(carContext, WebRenderer.LAUNCHER_URL)
     }
 }

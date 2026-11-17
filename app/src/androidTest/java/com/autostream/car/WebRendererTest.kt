@@ -159,6 +159,62 @@ class WebRendererTest {
         assertTrue("Ohne Geschwindigkeitsdaten muss gesperrt sein", c == null || (Color.red(c) < 60))
     }
 
+    private fun tileCenter(selector: String): Pair<Float, Float> {
+        var r: String? = null
+        repeat(30) {
+            r = js("(function(){var e=document.querySelector('$selector');if(!e)return null;" +
+                "var b=e.getBoundingClientRect();var d=window.devicePixelRatio;" +
+                "return [(b.left+b.width/2)*d,(b.top+b.height/2)*d];})()")
+            if (r != null && r != "null") return@repeat
+            SystemClock.sleep(300)
+        }
+        val parts = r!!.trim('[', ']').split(',')
+        return parts[0].toFloat() to parts[1].toFloat()
+    }
+
+    @Test fun launcherShowsTilesAndOpensService() {
+        val r = start(WebRenderer.LAUNCHER_URL)
+        SystemClock.sleep(4000)
+        save("00_startseite")
+        val count = js("document.querySelectorAll('.tile').length")
+        assertTrue("Kacheln fehlen: $count", count == "5")
+        val (x, y) = tileCenter(".tile")
+        r.onClick(x, y)
+        var href: String? = null
+        repeat(40) {
+            href = js("location.href")
+            if (href?.contains("netflix") == true) return@repeat
+            SystemClock.sleep(250)
+        }
+        assertTrue("Netflix nicht geöffnet: $href", href?.contains("netflix") == true)
+    }
+
+    @Test fun launcherSearchBarOpensCarKeyboard() {
+        val r = start(WebRenderer.LAUNCHER_URL)
+        val latch = CountDownLatch(1)
+        r.onOpenSearch = { latch.countDown() }
+        SystemClock.sleep(3000)
+        val (x, y) = tileCenter("#search")
+        r.onClick(x, y)
+        assertTrue("Suche wurde nicht geöffnet", latch.await(5, TimeUnit.SECONDS))
+    }
+
+    @Test fun foreignPageCannotOpenSearch() {
+        val r = start(redPageGreenOnClick)
+        val latch = CountDownLatch(1)
+        r.onOpenSearch = { latch.countDown() }
+        waitFor("rot sichtbar") { near(it, 255, 0, 0) }
+        js("AutoStream.openSearch()")
+        assertFalse("Fremde Seite darf Suche nicht öffnen", latch.await(2, TimeUnit.SECONDS))
+    }
+
+    @Test fun loadNavigatesToNewUrl() {
+        val r = start(redPageGreenOnClick)
+        waitFor("rot sichtbar") { near(it, 255, 0, 0) }
+        r.load(page("<body style='margin:0;background:#0000ff;height:100vh'></body>"))
+        waitFor("neue Seite blau") { near(it, 0, 0, 255) }
+    }
+
     /** Info-Test: Welche Widevine-Stufen bietet die WebView auf dem Autodisplay? */
     @Test fun reportDrmSupport() {
         start("https://example.com")

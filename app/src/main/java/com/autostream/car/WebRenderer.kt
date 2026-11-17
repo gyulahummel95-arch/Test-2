@@ -3,6 +3,9 @@ package com.autostream.car
 import android.app.Presentation
 import android.content.Context
 import android.graphics.Color
+import android.media.AudioAttributes
+import android.media.AudioFocusRequest
+import android.media.AudioManager
 import android.hardware.display.DisplayManager
 import android.hardware.display.VirtualDisplay
 import android.os.Bundle
@@ -17,12 +20,16 @@ import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup.LayoutParams.MATCH_PARENT
 import android.webkit.CookieManager
+import android.webkit.JavascriptInterface
 import android.webkit.WebView
 import android.widget.FrameLayout
 import android.widget.TextView
 import androidx.car.app.SurfaceCallback
 import androidx.car.app.SurfaceContainer
+import com.autostream.Shortcuts
 import com.autostream.WebConfig
+import org.json.JSONArray
+import org.json.JSONObject
 
 /**
  * Rendert eine WebView auf die Android-Auto-Fläche: Die Surface des Autos
@@ -41,6 +48,63 @@ class WebRenderer(
     private var motion = MotionState.UNKNOWN
 
     private val blocked get() = motion != MotionState.STOPPED
+
+    /** Wird aufgerufen, wenn auf der Startseite die Suchleiste angetippt wird. */
+    var onOpenSearch: (() -> Unit)? = null
+
+    private val audioManager = context.getSystemService(AudioManager::class.java)
+    private var hasAudioFocus = false
+    private val focusRequest = AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN)
+        .setAudioAttributes(
+            AudioAttributes.Builder()
+                .setUsage(AudioAttributes.USAGE_MEDIA)
+                .setContentType(AudioAttributes.CONTENT_TYPE_MOVIE)
+                .build()
+        )
+        .setOnAudioFocusChangeListener({ change ->
+            if (change == AudioManager.AUDIOFOCUS_LOSS || change == AudioManager.AUDIOFOCUS_LOSS_TRANSIENT) {
+                if (change == AudioManager.AUDIOFOCUS_LOSS) hasAudioFocus = false
+                presentation?.webView?.evaluateJavascript(WebConfig.JS_PAUSE_ALL, null)
+            }
+        }, main)
+        .build()
+
+    /** Video startet: Ton übernehmen, damit Spotify/Radio pausieren. */
+    private fun requestAudioFocus() {
+        if (hasAudioFocus) return
+        hasAudioFocus = audioManager.requestAudioFocus(focusRequest) ==
+            AudioManager.AUDIOFOCUS_REQUEST_GRANTED
+    }
+
+    private fun abandonAudioFocus() {
+        if (hasAudioFocus) audioManager.abandonAudioFocusRequest(focusRequest)
+        hasAudioFocus = false
+    }
+
+    /** Schnittstelle für JavaScript (Startseite und Abspiel-Erkennung). */
+    private inner class JsBridge {
+        @JavascriptInterface
+        fun shortcuts(): String {
+            val arr = JSONArray()
+            Shortcuts.load(context).forEach {
+                arr.put(JSONObject().put("name", it.name).put("url", it.url))
+            }
+            return arr.toString()
+        }
+
+        @JavascriptInterface
+        fun openSearch() {
+            main.post {
+                // Nur von der eigenen Startseite aus, nicht von fremden Webseiten.
+                if (presentation?.webView?.url?.startsWith(LAUNCHER_URL) == true) onOpenSearch?.invoke()
+            }
+        }
+
+        @JavascriptInterface
+        fun mediaStarted() {
+            main.post { if (!blocked) requestAudioFocus() }
+        }
+    }
 
     override fun onSurfaceAvailable(container: SurfaceContainer) {
         val surface = container.surface ?: return
@@ -92,6 +156,13 @@ class WebRenderer(
         }
     }
 
+    fun load(newUrl: String) {
+        main.post {
+            url = newUrl
+            presentation?.webView?.loadUrl(newUrl)
+        }
+    }
+
     fun goBack() {
         main.post { presentation?.webView?.let { if (it.canGoBack()) it.goBack() } }
     }
@@ -119,6 +190,7 @@ class WebRenderer(
     }
 
     private fun releaseDisplay() {
+        abandonAudioFocus()
         presentation?.let { p ->
             p.webView?.url?.let { url = it }
             CookieManager.getInstance().flush()
@@ -162,7 +234,10 @@ class WebRenderer(
             }
             root.addView(overlay, FrameLayout.LayoutParams(MATCH_PARENT, MATCH_PARENT))
             setContentView(root)
-            WebConfig.configure(wv, desktop, root)
+            wv.addJavascriptInterface(JsBridge(), "AutoStream")
+            WebConfig.configure(wv, desktop, root) { view ->
+                view.evaluateJavascript(WebConfig.JS_REPORT_PLAY, null)
+            }
             wv.loadUrl(url)
             webView = wv
             overlay.bringToFront()
@@ -179,6 +254,7 @@ class WebRenderer(
                 overlay.bringToFront()
                 webView?.evaluateJavascript(WebConfig.JS_PAUSE_ALL, null)
                 webView?.onPause()
+                abandonAudioFocus()
             } else {
                 overlay.visibility = View.GONE
                 webView?.onResume()
@@ -232,6 +308,7 @@ class WebRenderer(
     }
 
     companion object {
+        const val LAUNCHER_URL = "file:///android_asset/launcher.html"
         private const val TAG = "WebRenderer"
     }
 }

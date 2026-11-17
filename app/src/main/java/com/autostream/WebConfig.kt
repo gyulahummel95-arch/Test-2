@@ -22,7 +22,12 @@ object WebConfig {
             "(KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"
 
     @SuppressLint("SetJavaScriptEnabled")
-    fun configure(webView: WebView, desktop: Boolean, fullscreenHost: ViewGroup?) {
+    fun configure(
+        webView: WebView,
+        desktop: Boolean,
+        fullscreenHost: ViewGroup?,
+        onPageFinished: ((WebView) -> Unit)? = null,
+    ) {
         webView.settings.apply {
             javaScriptEnabled = true
             domStorageEnabled = true
@@ -43,6 +48,10 @@ object WebConfig {
                 val scheme = request.url.scheme ?: return true
                 // intent://, market:// usw. nicht an native Apps weiterreichen.
                 return scheme != "http" && scheme != "https"
+            }
+
+            override fun onPageFinished(view: WebView, url: String?) {
+                onPageFinished?.invoke(view)
             }
         }
 
@@ -79,6 +88,11 @@ object WebConfig {
 
     const val JS_PAUSE_ALL =
         "document.querySelectorAll('video,audio').forEach(function(m){m.pause();});"
+
+    /** Meldet Video-/Audio-Start an die App (für den Audio-Fokus). */
+    const val JS_REPORT_PLAY =
+        "if(!window.__asPlayHook){window.__asPlayHook=1;document.addEventListener('play'," +
+            "function(){if(window.AutoStream)AutoStream.mediaStarted();},true);}"
 
     const val JS_TOGGLE_PLAY =
         "(function(){var v=document.querySelector('video');if(!v)return;" +
