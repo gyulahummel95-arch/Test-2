@@ -1,0 +1,258 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  :root { --bg: #0b0f1a; --card: rgba(255,255,255,.055); --line: rgba(255,255,255,.08);
+          --text: #f2f4f8; --muted: #8c95a8; --accent: #3d8bff; --ok: #30d158; --bad: #ff453a; }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  html { background: var(--bg); }
+  body { font-family: Roboto, "Segoe UI", sans-serif; color: var(--text); min-height: 100vh;
+         background: var(--bg) radial-gradient(140% 900px at 0% 0%, #1d2a4a 0%, #121a2c 45%, var(--bg) 100%) no-repeat; }
+  .wrap { max-width: 640px; margin: 0 auto; padding: 20px 16px 40px; }
+  .hero { display: flex; align-items: center; gap: 14px; margin: 6px 0 18px; }
+  .logo { width: 52px; height: 52px; border-radius: 16px; display: grid; place-items: center;
+          background: linear-gradient(145deg, #ff3b30, #8a0b0b); box-shadow: 0 6px 18px rgba(229,9,20,.35); }
+  .logo svg { width: 22px; fill: #fff; margin-left: 3px; }
+  h1 { font-size: 24px; font-weight: 600; letter-spacing: -.01em; }
+  .sub { color: var(--muted); font-size: 13px; margin-top: 2px; }
+  .chip { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 99px;
+          font-size: 12px; background: rgba(48,209,88,.12); color: var(--ok); margin-top: 6px; }
+  .chip.warn { background: rgba(255,69,58,.12); color: var(--bad); }
+  .chip::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+  section { background: var(--card); border: 1px solid var(--line); border-radius: 20px; padding: 16px; margin-bottom: 14px; }
+  h2 { font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); margin-bottom: 12px; }
+  .row { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-top: 1px solid var(--line); }
+  .row:first-of-type { border-top: 0; padding-top: 2px; }
+  .grow { flex: 1; min-width: 0; }
+  .title { font-size: 15px; font-weight: 500; }
+  .desc { font-size: 12.5px; color: var(--muted); margin-top: 2px; line-height: 1.4; }
+  .dot { width: 10px; height: 10px; border-radius: 50%; flex: none; background: var(--bad); box-shadow: 0 0 8px currentColor; color: var(--bad); }
+  .dot.ok { background: var(--ok); color: var(--ok); }
+  button { font: inherit; border: 0; cursor: pointer; }
+  .btn { background: var(--accent); color: #fff; padding: 9px 14px; border-radius: 12px; font-size: 14px; font-weight: 500; flex: none; }
+  .btn.ghost { background: rgba(255,255,255,.08); color: var(--text); }
+  .btn.icon { padding: 8px 11px; background: rgba(255,255,255,.06); color: var(--muted); }
+  .svc-icon { width: 42px; height: 42px; border-radius: 12px; flex: none; display: grid; place-items: center;
+              font-weight: 700; font-size: 18px; color: #fff; overflow: hidden; }
+  .svc-icon img { width: 26px; height: 26px; border-radius: 6px; background: #fff; padding: 2px; }
+  .svc-host { font-size: 12px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .add { display: grid; grid-template-columns: 1fr 1.6fr auto; gap: 8px; margin-top: 12px; }
+  input[type=text] { font: inherit; font-size: 14px; color: var(--text); background: rgba(255,255,255,.07);
+                     border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; min-width: 0; outline: none; }
+  input[type=text]:focus { border-color: var(--accent); }
+  .themes { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  .theme { border-radius: 14px; padding: 8px; background: rgba(255,255,255,.04); border: 2px solid transparent; text-align: left; color: var(--text); }
+  .theme.on { border-color: var(--accent); background: rgba(61,139,255,.10); }
+  .swatch { height: 54px; border-radius: 10px; margin-bottom: 7px; position: relative; overflow: hidden; }
+  .theme span { font-size: 12.5px; font-weight: 500; }
+  .switch { position: relative; width: 50px; height: 30px; flex: none; }
+  .switch input { opacity: 0; width: 0; height: 0; }
+  .slider { position: absolute; inset: 0; border-radius: 99px; background: rgba(255,255,255,.14); transition: .2s; }
+  .slider::before { content: ""; position: absolute; left: 3px; top: 3px; width: 24px; height: 24px; border-radius: 50%; background: #fff; transition: .2s; }
+  .switch input:checked + .slider { background: var(--ok); }
+  .switch input:checked + .slider::before { transform: translateX(20px); }
+  details summary { list-style: none; cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
+  details summary::-webkit-details-marker { display: none; }
+  details summary::after { content: "›"; color: var(--muted); font-size: 22px; transition: .2s; }
+  details[open] summary::after { transform: rotate(90deg); }
+  .steps { margin: 12px 0 0 18px; color: var(--muted); font-size: 13.5px; line-height: 1.6; }
+  .steps b { color: var(--text); font-weight: 500; }
+  .diag { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 12.5px; }
+  .diag td { padding: 7px 0; border-top: 1px solid var(--line); vertical-align: top; }
+  .diag td:first-child { color: var(--muted); padding-right: 12px; width: 42%; }
+  .foot { text-align: center; color: var(--muted); font-size: 12px; margin-top: 18px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="hero">
+    <div class="logo"><svg viewBox="0 0 10 12"><path d="M0 0L10 6L0 12Z"/></svg></div>
+    <div class="grow">
+      <h1>AutoStream</h1>
+      <div id="status" class="chip">Bereit</div>
+    </div>
+  </div>
+
+  <section id="setup">
+    <h2>Einrichtung</h2>
+    <div id="setupRows"></div>
+    <details class="row">
+      <summary class="grow"><div><div class="title">Android Auto vorbereiten</div>
+        <div class="desc">Einmalig nötig, damit AutoStream im Auto erscheint</div></div></summary>
+      <ol class="steps">
+        <li>Android-Auto-Einstellungen öffnen, <b>10× auf „Version“</b> tippen</li>
+        <li>Drei-Punkte-Menü → <b>Entwicklereinstellungen</b></li>
+        <li><b>„Unbekannte Quellen“</b> einschalten</li>
+        <li>Handy verbinden, im Auto <b>AutoStream</b> öffnen</li>
+      </ol>
+    </details>
+  </section>
+
+  <section>
+    <h2>Dienste</h2>
+    <div id="services"></div>
+    <div class="add">
+      <input type="text" id="newName" placeholder="Name">
+      <input type="text" id="newUrl" placeholder="z. B. ardmediathek.de" inputmode="url">
+      <button class="btn" id="addBtn">+</button>
+    </div>
+  </section>
+
+  <section>
+    <h2>Design im Auto</h2>
+    <div class="themes" id="themes"></div>
+    <div class="row" style="border-top:0;padding-bottom:0">
+      <div class="grow desc">Tipp: Im Auto 5× auf die Uhr tippen wechselt das Design.</div>
+      <button class="btn ghost" id="bgBtn">Bild wählen</button>
+    </div>
+  </section>
+
+  <section>
+    <h2>Wiedergabe</h2>
+    <div class="row">
+      <div class="grow"><div class="title">Desktop-Modus</div>
+        <div class="desc">Nötig für Netflix & Co. im Auto</div></div>
+      <label class="switch"><input type="checkbox" id="desktop"><span class="slider"></span></label>
+    </div>
+    <div class="row">
+      <div class="grow"><div class="title">Ton während der Fahrt</div>
+        <div class="desc">Bild bleibt bei Fahrt immer gesperrt</div></div>
+      <label class="switch"><input type="checkbox" id="audio"><span class="slider"></span></label>
+    </div>
+  </section>
+
+  <section>
+    <details>
+      <summary><h2 style="margin:0">Diagnose</h2></summary>
+      <table class="diag" id="diag"></table>
+      <div style="margin-top:12px;display:flex;justify-content:flex-end">
+        <button class="btn ghost" id="diagReset">Zurücksetzen</button>
+      </div>
+    </details>
+  </section>
+
+  <div class="foot" id="foot"></div>
+</div>
+<script>
+  // Im Browser-Vorschaumodus (ohne App) mit Beispieldaten arbeiten
+  var A = window.App || {
+    _s: { shortcuts: [{name:'Netflix',url:'https://www.netflix.com/browse'},{name:'YouTube',url:'https://www.youtube.com'},
+      {name:'Disney+',url:'https://www.disneyplus.com'},{name:'Prime Video',url:'https://www.primevideo.com'},
+      {name:'HBO Max',url:'https://www.hbomax.com'},{name:'Paramount+',url:'https://www.paramountplus.com'},{name:'Twitch',url:'https://www.twitch.tv'}],
+      theme: 'upside', desktop: true, audio: true, hasBackground: false, location: true, xiaomi: true,
+      diagnostics: [['Android Auto verbunden','ja (17.11. 21:30:02)'],['Autodisplay (Auflösung)','1920 × 1080, 320 dpi'],['Sperre','Stillstand – frei']],
+      device: 'Xiaomi Redmi Note 13, Android 15', version: '1.0' },
+    getState: function () { return JSON.stringify(this._s); },
+    saveShortcuts: function (j) { this._s.shortcuts = JSON.parse(j); }, setTheme: function (t) { this._s.theme = t; },
+    setDesktop: function (v) { this._s.desktop = v; }, setAudio: function (v) { this._s.audio = v; },
+    openService: function () {}, requestLocation: function () {}, openXiaomi: function () {}, pickBackground: function () {},
+    clearDiagnostics: function () {}
+  };
+
+  var COLORS = { netflix: '#e50914', youtube: '#ff2d2d', disneyplus: '#1a3fa8', primevideo: '#1399ff', twitch: '#9146ff',
+    hbomax: '#4b2bd6', paramountplus: '#0064ff', ardmediathek: '#0b5fb3', zdf: '#fa7d19', joyn: '#ff3e6c', rtlplus: '#e5007d' };
+  var THEMES = [
+    ['standard', 'Standard', 'radial-gradient(circle at 20% 30%,#2f6bff88,transparent 60%),radial-gradient(circle at 80% 80%,#8a3dff88,transparent 60%),#121a2c'],
+    ['upside', 'Upside Down', 'radial-gradient(circle at 50% 0%,#5a0b0b,#120303 70%)'],
+    ['squid', 'Squid', 'radial-gradient(circle at 100% 100%,#0d5f56,#041a18 70%)'],
+    ['lab', 'Lab', 'linear-gradient(160deg,#25262b,#050505)'],
+    ['apocalypse', 'Apocalypse', 'linear-gradient(170deg,#3a3724,#0d0c08)'],
+    ['custom', 'Eigenes Bild', 'linear-gradient(135deg,#444,#222)']
+  ];
+  var DECOR = { upside: '<i style="position:absolute;left:8%;top:6px;width:84%;height:6px;background:repeating-linear-gradient(90deg,#ff3b30 0 6px,transparent 6px 14px,#ffd60a 14px 20px,transparent 20px 28px,#30d158 28px 34px,transparent 34px 42px)"></i>',
+    squid: '<i style="position:absolute;right:10px;top:12px;font:700 20px sans-serif;color:#ff2d7a88">○△□</i>',
+    lab: '<i style="position:absolute;right:12px;bottom:10px;width:12px;height:12px;border-radius:50%;background:#a00"></i><i style="position:absolute;right:28px;bottom:20px;width:6px;height:6px;border-radius:50%;background:#a00"></i>',
+    apocalypse: '<i style="position:absolute;left:12px;bottom:8px;font:12px Impact,sans-serif;color:#e6dfc888">TAG 12</i>' };
+
+  function $(id) { return document.getElementById(id); }
+  function hostOf(u) { try { return new URL(u).hostname.replace(/^www\./, ''); } catch (e) { return u; } }
+  function el(tag, cls, text) { var e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
+  function state() { return JSON.parse(A.getState()); }
+
+  function render() {
+    var s = state();
+    // Status
+    var problems = [];
+    if (!s.location) problems.push('Standort fehlt');
+    $('status').className = 'chip' + (problems.length ? ' warn' : '');
+    $('status').textContent = problems.length ? problems.join(' · ') : 'Bereit fürs Auto';
+
+    // Einrichtung
+    var rows = $('setupRows'); rows.innerHTML = '';
+    function setupRow(ok, title, desc, btnText, action) {
+      var r = el('div', 'row'), d = el('div', 'dot' + (ok ? ' ok' : ''));
+      var t = el('div', 'grow'); t.appendChild(el('div', 'title', title)); t.appendChild(el('div', 'desc', desc));
+      r.appendChild(d); r.appendChild(t);
+      if (btnText) { var b = el('button', 'btn' + (ok ? ' ghost' : ''), btnText); b.onclick = action; r.appendChild(b); }
+      rows.appendChild(r);
+    }
+    setupRow(s.location, 'Standort', s.location ? 'Erlaubt – Stillstand wird erkannt' : 'Nötig für die Sperre „nur im Stand“',
+      s.location ? null : 'Erlauben', function () { A.requestLocation(); });
+    if (s.xiaomi) {
+      setupRow(true, 'Autostart', 'Xiaomi beendet sonst die App im Hintergrund', 'Öffnen', function () { A.openXiaomi('autostart'); });
+      setupRow(true, 'Akku: Keine Einschränkungen', 'Unter „Akkusparmodus“ einstellen', 'Öffnen', function () { A.openXiaomi('battery'); });
+      setupRow(true, 'Pop-up-Fenster im Hintergrund', 'Unter „Weitere Berechtigungen“ erlauben', 'Öffnen', function () { A.openXiaomi('popup'); });
+    }
+
+    // Dienste
+    var list = $('services'); list.innerHTML = '';
+    s.shortcuts.forEach(function (sc, i) {
+      var host = hostOf(sc.url), key = host.split('.').slice(-2, -1)[0];
+      var r = el('div', 'row svc');
+      var ic = el('div', 'svc-icon', sc.name.charAt(0).toUpperCase());
+      ic.style.background = COLORS[key] || '#2d6cdf';
+      var img = new Image();
+      img.onload = function () { ic.textContent = ''; ic.appendChild(img); };
+      img.src = 'https://www.google.com/s2/favicons?sz=64&domain=' + encodeURIComponent(host);
+      var t = el('div', 'grow'); t.appendChild(el('div', 'title', sc.name)); t.appendChild(el('div', 'svc-host', host));
+      var open = el('button', 'btn ghost', 'Öffnen'); open.onclick = function () { A.openService(sc.url, sc.name); };
+      var up = el('button', 'btn icon', '↑'); up.title = 'Nach oben';
+      up.onclick = function () { if (!i) return; var l = s.shortcuts.slice(); l.splice(i - 1, 0, l.splice(i, 1)[0]); A.saveShortcuts(JSON.stringify(l)); render(); };
+      var del = el('button', 'btn icon', '✕'); del.title = 'Entfernen';
+      del.onclick = function () { var l = s.shortcuts.slice(); l.splice(i, 1); A.saveShortcuts(JSON.stringify(l)); render(); };
+      [ic, t, open, up, del].forEach(function (x) { r.appendChild(x); });
+      list.appendChild(r);
+    });
+
+    // Designs
+    var th = $('themes'); th.innerHTML = '';
+    THEMES.forEach(function (t) {
+      var b = el('button', 'theme' + (s.theme === t[0] ? ' on' : ''));
+      var sw = el('div', 'swatch'); sw.style.background = t[2]; sw.innerHTML = DECOR[t[0]] || '';
+      b.appendChild(sw); b.appendChild(el('span', null, t[1]));
+      b.onclick = function () {
+        if (t[0] === 'custom' && !s.hasBackground) { A.pickBackground(); return; }
+        A.setTheme(t[0]); render();
+      };
+      th.appendChild(b);
+    });
+    $('bgBtn').textContent = s.hasBackground ? 'Bild ändern' : 'Bild wählen';
+
+    $('desktop').checked = s.desktop; $('audio').checked = s.audio;
+
+    var diag = $('diag'); diag.innerHTML = '';
+    s.diagnostics.concat([['Handy', s.device]]).forEach(function (d) {
+      var tr = el('tr'); tr.appendChild(el('td', null, d[0])); tr.appendChild(el('td', null, d[1])); diag.appendChild(tr);
+    });
+    $('foot').textContent = 'AutoStream ' + s.version;
+  }
+
+  $('addBtn').onclick = function () {
+    var name = $('newName').value.trim(), url = $('newUrl').value.trim();
+    if (!name || !url) return;
+    if (!/^https?:\/\//.test(url)) url = 'https://' + url;
+    var l = state().shortcuts; l.push({ name: name, url: url });
+    A.saveShortcuts(JSON.stringify(l));
+    $('newName').value = ''; $('newUrl').value = ''; render();
+  };
+  $('desktop').onchange = function () { A.setDesktop(this.checked); };
+  $('audio').onchange = function () { A.setAudio(this.checked); };
+  $('bgBtn').onclick = function () { A.pickBackground(); };
+  $('diagReset').onclick = function () { A.clearDiagnostics(); render(); };
+  window.onStateChanged = render;
+  render();
+</script>
+</body>
+</html>

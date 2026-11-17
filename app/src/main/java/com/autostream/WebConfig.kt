@@ -27,6 +27,8 @@ object WebConfig {
         desktop: Boolean,
         fullscreenHost: ViewGroup?,
         onPageFinished: ((WebView) -> Unit)? = null,
+        onProgress: ((Int) -> Unit)? = null,
+        onUrlChanged: ((String) -> Unit)? = null,
     ) {
         webView.settings.apply {
             javaScriptEnabled = true
@@ -53,10 +55,18 @@ object WebConfig {
             override fun onPageFinished(view: WebView, url: String?) {
                 onPageFinished?.invoke(view)
             }
+
+            override fun doUpdateVisitedHistory(view: WebView, url: String?, isReload: Boolean) {
+                if (url != null) onUrlChanged?.invoke(url)
+            }
         }
 
         webView.webChromeClient = object : WebChromeClient() {
             private var customView: View? = null
+
+            override fun onProgressChanged(view: WebView, newProgress: Int) {
+                onProgress?.invoke(newProgress)
+            }
 
             // Widevine-DRM (Netflix, Disney+, Prime) freigeben.
             override fun onPermissionRequest(request: PermissionRequest) {
