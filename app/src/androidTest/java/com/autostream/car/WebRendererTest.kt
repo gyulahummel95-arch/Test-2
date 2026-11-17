@@ -85,6 +85,20 @@ class WebRendererTest {
 
     private fun centerColor(): Int? = frame()?.getPixel(w / 2, h / 2)
 
+    /** Punkt abseits des Hinweistextes der Sperre (der steht in der Mitte). */
+    private fun cornerColor(): Int? = frame()?.getPixel(w / 10, h / 10)
+
+    private fun waitForCovered(what: String) {
+        val end = SystemClock.uptimeMillis() + 20_000
+        while (SystemClock.uptimeMillis() < end) {
+            val c = cornerColor()
+            if (c != null && Color.red(c) < 60 && Color.green(c) < 60) return
+            SystemClock.sleep(200)
+        }
+        save("FAIL_$what")
+        throw AssertionError("$what: Ecken-Farbe = ${cornerColor()?.let { Integer.toHexString(it) }}")
+    }
+
     private fun near(c: Int?, r: Int, g: Int, b: Int, tol: Int = 50) = c != null &&
         Math.abs(Color.red(c) - r) < tol && Math.abs(Color.green(c) - g) < tol && Math.abs(Color.blue(c) - b) < tol
 
@@ -152,7 +166,7 @@ class WebRendererTest {
         val r = start(redPageGreenOnClick)
         waitFor("rot sichtbar") { near(it, 255, 0, 0) }
         r.setMotionState(MotionState.MOVING)
-        waitFor("während Fahrt abgedeckt") { c -> c != null && Color.red(c) < 60 && Color.green(c) < 60 }
+        waitForCovered("während Fahrt abgedeckt")
         save("04_sperre_waehrend_fahrt")
         r.onClick(w / 2f, h / 2f)
         SystemClock.sleep(1000)
@@ -165,7 +179,7 @@ class WebRendererTest {
     @Test fun unknownMotionStateBlocks() {
         start(redPageGreenOnClick, MotionState.UNKNOWN)
         SystemClock.sleep(3000)
-        val c = centerColor()
+        val c = cornerColor()
         save("05_sperre_ohne_daten")
         assertTrue("Ohne Geschwindigkeitsdaten muss gesperrt sein", c == null || (Color.red(c) < 60))
     }
@@ -303,7 +317,7 @@ class WebRendererTest {
         val r = start(pauseCountingPage)
         waitFor("rot sichtbar") { near(it, 255, 0, 0) }
         r.setMotionState(MotionState.MOVING)
-        waitFor("während Fahrt abgedeckt") { c -> c != null && Color.red(c) < 60 }
+        waitForCovered("während Fahrt abgedeckt")
         SystemClock.sleep(800)
         assertTrue("Video wurde pausiert, obwohl Ton weiterlaufen soll", js("window.pauses") == "0")
         save("06_fahrt_ton_laeuft")
@@ -315,7 +329,7 @@ class WebRendererTest {
             val r = start(pauseCountingPage)
             waitFor("rot sichtbar") { near(it, 255, 0, 0) }
             r.setMotionState(MotionState.MOVING)
-            waitFor("während Fahrt abgedeckt") { c -> c != null && Color.red(c) < 60 }
+            waitForCovered("während Fahrt abgedeckt")
             SystemClock.sleep(800)
             val pauses = js("window.pauses")?.toIntOrNull() ?: 0
             assertTrue("Video hätte pausiert werden müssen", pauses >= 1)
