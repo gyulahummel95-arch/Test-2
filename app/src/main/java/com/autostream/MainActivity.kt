@@ -14,6 +14,7 @@ import android.os.Looper
 import android.provider.Settings
 import android.view.ViewGroup.LayoutParams.MATCH_PARENT
 import android.webkit.JavascriptInterface
+import android.webkit.RenderProcessGoneDetail
 import android.webkit.WebResourceRequest
 import android.webkit.WebView
 import android.webkit.WebViewClient
@@ -38,6 +39,12 @@ class MainActivity : Activity() {
             // Nur die eigene Seite – keine fremden Seiten mit Zugriff auf die Schnittstelle
             webViewClient = object : WebViewClient() {
                 override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest) = true
+
+                // Browser-Prozess beendet: Seite neu aufbauen statt App-Absturz
+                override fun onRenderProcessGone(view: WebView, detail: RenderProcessGoneDetail): Boolean {
+                    main.post { recreate() }
+                    return true
+                }
             }
             addJavascriptInterface(Bridge(), "App")
         }

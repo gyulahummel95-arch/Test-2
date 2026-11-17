@@ -7,7 +7,7 @@ code=$?
 mkdir -p test-output
 adb pull /sdcard/Download/autostream-test test-output/ || true
 adb logcat -d -s AutoStreamTest:I > test-output/logcat.txt || true
-adb logcat -d -s AndroidRuntime:E > test-output/crashes.txt || true
+{ adb logcat -d -s AndroidRuntime:E; adb logcat -d -b crash; } > test-output/crashes.txt 2>&1 || true
 echo "===== AutoStreamTest Log ====="
 cat test-output/logcat.txt
 echo "===== Abstürze (AndroidRuntime) ====="

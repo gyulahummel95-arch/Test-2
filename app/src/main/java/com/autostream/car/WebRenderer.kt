@@ -125,8 +125,11 @@ class WebRenderer(
         }
     }
 
+    private var lastContainer: SurfaceContainer? = null
+
     override fun onSurfaceAvailable(container: SurfaceContainer) {
         val surface = container.surface ?: return
+        lastContainer = container
         main.post {
             releaseDisplay()
             surfaceWidth = container.width
@@ -288,6 +291,11 @@ class WebRenderer(
             WebConfig.configure(wv, desktop, root, onPageFinished = { view ->
                 view.evaluateJavascript(WebConfig.JS_REPORT_PLAY, null)
                 applySafeArea()
+            }, onRendererGone = {
+                // Browser-Prozess beendet: Anzeige im Auto neu aufbauen
+                Diagnostics.set(context, Diagnostics.ERROR, "Browser-Prozess neu gestartet")
+                webView = null
+                main.post { lastContainer?.let { onSurfaceAvailable(it) } }
             })
             wv.loadUrl(url)
             webView = wv

@@ -5,6 +5,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.webkit.CookieManager
 import android.webkit.PermissionRequest
+import android.webkit.RenderProcessGoneDetail
 import android.webkit.WebChromeClient
 import android.webkit.WebResourceRequest
 import android.webkit.WebView
@@ -29,6 +30,7 @@ object WebConfig {
         onPageFinished: ((WebView) -> Unit)? = null,
         onProgress: ((Int) -> Unit)? = null,
         onUrlChanged: ((String) -> Unit)? = null,
+        onRendererGone: (() -> Unit)? = null,
     ) {
         webView.settings.apply {
             javaScriptEnabled = true
@@ -54,6 +56,18 @@ object WebConfig {
 
             override fun onPageFinished(view: WebView, url: String?) {
                 onPageFinished?.invoke(view)
+            }
+
+            /**
+             * Der Browser-Unterprozess ist abgestürzt oder wurde (z. B. von Xiaomi bei
+             * Speichermangel) beendet. Ohne diese Behandlung beendet Android die ganze App.
+             */
+            override fun onRenderProcessGone(view: WebView, detail: RenderProcessGoneDetail): Boolean {
+                android.util.Log.w("WebConfig", "Browser-Prozess beendet (crash=${detail.didCrash()})")
+                (view.parent as? ViewGroup)?.removeView(view)
+                view.destroy()
+                onRendererGone?.invoke()
+                return true
             }
 
             override fun doUpdateVisitedHistory(view: WebView, url: String?, isReload: Boolean) {

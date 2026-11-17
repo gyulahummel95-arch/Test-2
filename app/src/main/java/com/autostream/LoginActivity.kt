@@ -1,6 +1,7 @@
 package com.autostream
 
 import android.app.Activity
+import android.content.Intent
 import android.graphics.drawable.GradientDrawable
 import android.os.Bundle
 import android.text.InputType
@@ -100,10 +101,17 @@ class LoginActivity : Activity() {
                 progress.visibility = if (p >= 100) View.INVISIBLE else View.VISIBLE
             },
             onUrlChanged = { url -> if (!urlField.hasFocus()) urlField.setText(url) },
+            onRendererGone = { recreateAt(urlField.text.toString()) },
         )
         val start = intent.getStringExtra(EXTRA_URL) ?: "https://www.netflix.com/login"
         urlField.setText(start)
         webView.loadUrl(start)
+    }
+
+    /** Nach Absturz des Browser-Prozesses: Seite neu öffnen statt App-Absturz. */
+    private fun recreateAt(url: String) {
+        startActivity(Intent(this, LoginActivity::class.java).putExtra(EXTRA_URL, url))
+        finish()
     }
 
     private fun iconButton(label: String, description: String, onClick: () -> Unit) = TextView(this).apply {
@@ -148,7 +156,7 @@ class LoginActivity : Activity() {
     }
 
     override fun onDestroy() {
-        webView.destroy()
+        if (webView.parent != null) webView.destroy()
         super.onDestroy()
     }
 
