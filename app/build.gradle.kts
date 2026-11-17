@@ -16,11 +16,28 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    // Fester Signaturschlüssel aus GitHub-Secrets (siehe SIGNING.md).
+    // Ohne Secrets: zufälliger Debug-Schlüssel – Updates lassen sich dann nicht drüberinstallieren.
+    val signingStoreFile = System.getenv("SIGNING_STORE_FILE")
+    val signingPassword = System.getenv("SIGNING_PASSWORD")
+    signingConfigs {
+        if (!signingStoreFile.isNullOrBlank() && !signingPassword.isNullOrBlank()) {
+            create("autostream") {
+                storeFile = file(signingStoreFile)
+                storePassword = signingPassword
+                keyAlias = "autostream"
+                keyPassword = signingPassword
+            }
+        }
+    }
+
     buildTypes {
+        debug {
+            signingConfigs.findByName("autostream")?.let { signingConfig = it }
+        }
         release {
             isMinifyEnabled = false
-            // Zum Sideloaden reicht die Debug-Signatur.
-            signingConfig = signingConfigs.getByName("debug")
+            signingConfig = signingConfigs.findByName("autostream") ?: signingConfigs.getByName("debug")
         }
     }
 
