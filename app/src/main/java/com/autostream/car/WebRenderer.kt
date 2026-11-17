@@ -3,6 +3,7 @@ package com.autostream.car
 import android.app.Presentation
 import android.content.Context
 import android.graphics.Color
+import android.graphics.Rect
 import android.media.AudioAttributes
 import android.media.AudioFocusRequest
 import android.media.AudioManager
@@ -46,6 +47,9 @@ class WebRenderer(
     private var virtualDisplay: VirtualDisplay? = null
     private var presentation: WebPresentation? = null
     private var motion = MotionState.UNKNOWN
+    private var visibleArea: Rect? = null
+    private var surfaceWidth = 0
+    private var surfaceHeight = 0
 
     private val blocked get() = motion != MotionState.STOPPED
 
@@ -110,6 +114,8 @@ class WebRenderer(
         val surface = container.surface ?: return
         main.post {
             releaseDisplay()
+            surfaceWidth = container.width
+            surfaceHeight = container.height
             val dm = context.getSystemService(DisplayManager::class.java)
             val vd = dm.createVirtualDisplay(
                 "AutoStream", container.width, container.height, container.dpi,
@@ -125,6 +131,26 @@ class WebRenderer(
                 Log.e(TAG, "Presentation konnte nicht angezeigt werden", e)
             }
         }
+    }
+
+    /** Bereich, der nicht von Android-Auto-Knöpfen verdeckt ist. */
+    override fun onVisibleAreaChanged(visibleArea: Rect) {
+        main.post {
+            this.visibleArea = Rect(visibleArea)
+            applySafeArea()
+        }
+    }
+
+    /** Übergibt die Ränder (in Pixeln) an die Startseite, damit nichts verdeckt wird. */
+    private fun applySafeArea() {
+        val wv = presentation?.webView ?: return
+        val area = visibleArea ?: return
+        if (wv.url?.startsWith(LAUNCHER_URL) != true || surfaceWidth == 0) return
+        val l = area.left.coerceAtLeast(0)
+        val t = area.top.coerceAtLeast(0)
+        val r = (surfaceWidth - area.right).coerceAtLeast(0)
+        val b = (surfaceHeight - area.bottom).coerceAtLeast(0)
+        wv.evaluateJavascript("window.setSafeArea&&setSafeArea($l,$t,$r,$b)", null)
     }
 
     override fun onSurfaceDestroyed(container: SurfaceContainer) {
@@ -237,6 +263,7 @@ class WebRenderer(
             wv.addJavascriptInterface(JsBridge(), "AutoStream")
             WebConfig.configure(wv, desktop, root) { view ->
                 view.evaluateJavascript(WebConfig.JS_REPORT_PLAY, null)
+                applySafeArea()
             }
             wv.loadUrl(url)
             webView = wv

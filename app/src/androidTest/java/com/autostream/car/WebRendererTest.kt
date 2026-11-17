@@ -27,8 +27,8 @@ import java.util.concurrent.TimeUnit
 @RunWith(AndroidJUnit4::class)
 class WebRendererTest {
     private val context = InstrumentationRegistry.getInstrumentation().targetContext
-    private val w = 800
-    private val h = 480
+    private var w = 800
+    private var h = 480
     private var reader: ImageReader? = null
     private var renderer: WebRenderer? = null
     private var lastFrame: Bitmap? = null
@@ -44,12 +44,21 @@ class WebRendererTest {
             "onclick=\"document.body.style.background='#00ff00'\"></body>"
     )
 
-    private fun start(url: String, state: MotionState = MotionState.STOPPED): WebRenderer {
+    private fun start(
+        url: String,
+        state: MotionState = MotionState.STOPPED,
+        width: Int = 800,
+        height: Int = 480,
+        dpi: Int = 160,
+    ): WebRenderer {
+        w = width
+        h = height
+        lastFrame = null
         val r = ImageReader.newInstance(w, h, PixelFormat.RGBA_8888, 3)
         reader = r
         return WebRenderer(context, url, true).also {
             renderer = it
-            it.onSurfaceAvailable(SurfaceContainer(r.surface, w, h, 160))
+            it.onSurfaceAvailable(SurfaceContainer(r.surface, w, h, dpi))
             it.setMotionState(state)
         }
     }
@@ -213,6 +222,66 @@ class WebRendererTest {
         waitFor("rot sichtbar") { near(it, 255, 0, 0) }
         r.load(page("<body style='margin:0;background:#0000ff;height:100vh'></body>"))
         waitFor("neue Seite blau") { near(it, 0, 0, 255) }
+    }
+
+    private fun stopCurrent() {
+        renderer?.release()
+        SystemClock.sleep(500)
+        reader?.close()
+        renderer = null
+        reader = null
+    }
+
+    /** Prüft Kacheln/Suchleiste: alles im Bild, nichts überlappt, Kacheln groß genug. */
+    private fun checkLauncherLayout(label: String, rightLimitPx: Int = w) {
+        val result = js("""
+            (function(){
+              var d=window.devicePixelRatio, W=innerWidth, H=innerHeight;
+              var s=document.getElementById('search').getBoundingClientRect();
+              var tiles=[].slice.call(document.querySelectorAll('.tile')).map(function(e){return e.getBoundingClientRect();});
+              var inside=tiles.every(function(b){return b.left>=0&&b.top>=0&&b.right<=W+1&&b.bottom<=H+1;});
+              var overlap=tiles.some(function(b){return b.top < s.bottom;});
+              var minH=Math.min.apply(null,tiles.map(function(b){return b.height;}));
+              return [inside?1:0, overlap?1:0, minH/H, s.right*d, tiles.length, s.height*d].join(',');
+            })()
+        """.trimIndent())!!.trim('"')
+        Log.i(TAG, "LAYOUT $label: $result")
+        val p = result.split(',')
+        assertTrue("$label: Kachel außerhalb des Bildes", p[0] == "1")
+        assertTrue("$label: Kacheln überlappen Suchleiste", p[1] == "0")
+        assertTrue("$label: Kacheln zu klein (${p[2]})", p[2].toFloat() >= 0.18f)
+        assertTrue("$label: Suchleiste verdeckt (${p[3]} > $rightLimitPx)", p[3].toFloat() <= rightLimitPx + 1)
+        assertTrue("$label: Kacheln fehlen", p[4] == "5")
+        assertTrue("$label: Suchleiste zu klein zum Tippen (${p[5]}px)", p[5].toFloat() >= 40f)
+    }
+
+    /** Gängige Android-Auto-Auflösungen (Breite, Höhe, dpi). */
+    @Test fun launcherFitsCommonCarDisplays() {
+        val profiles = listOf(
+            Triple(800, 480, 160),    // ältere / kleine Displays
+            Triple(1280, 720, 213),   // häufigster Standard
+            Triple(1920, 1080, 320),  // Full HD, viele neuere Autos
+            Triple(2560, 1440, 400),  // QHD, große Displays
+            Triple(1920, 720, 240),   // Breitbild
+            Triple(1080, 1920, 320),  // Hochformat
+        )
+        for ((pw, ph, dpi) in profiles) {
+            start(WebRenderer.LAUNCHER_URL, width = pw, height = ph, dpi = dpi)
+            SystemClock.sleep(3500)
+            checkLauncherLayout("${pw}x$ph")
+            save("20_startseite_${pw}x$ph")
+            stopCurrent()
+        }
+    }
+
+    /** Android-Auto-Knöpfe rechts dürfen die Suchleiste nicht verdecken. */
+    @Test fun launcherRespectsVisibleArea() {
+        val r = start(WebRenderer.LAUNCHER_URL, width = 1280, height = 720, dpi = 213)
+        SystemClock.sleep(3000)
+        r.onVisibleAreaChanged(android.graphics.Rect(0, 0, 1280 - 220, 720))
+        SystemClock.sleep(1500)
+        checkLauncherLayout("1280x720 mit Knopfleiste", rightLimitPx = 1280 - 220)
+        save("21_startseite_mit_knopfleiste")
     }
 
     /** Info-Test: Welche Widevine-Stufen bietet die WebView auf dem Autodisplay? */

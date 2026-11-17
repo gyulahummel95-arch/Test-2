@@ -6,37 +6,51 @@
 <style>
   :root {
     --bg1: #0b0f1a; --bg2: #151c2e; --card: rgba(255,255,255,.07);
-    --text: #f2f4f8; --muted: #8c95a8; --accent: #3d8bff;
+    --text: #f2f4f8; --muted: #8c95a8;
+    /* Grundeinheit: skaliert mit der kürzeren Seite, passt auf Breit- und Hochformat */
+    --u: min(1vh, 1.25vw);
+    --safe-l: 0px; --safe-t: 0px; --safe-r: 0px; --safe-b: 0px;
+    --t: 160px; /* Kachelhöhe, wird per JS berechnet */
   }
   * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
   html, body { height: 100%; overflow: hidden; }
   body {
     font-family: Roboto, "Segoe UI", sans-serif; color: var(--text);
     background: radial-gradient(120% 120% at 0% 0%, #1d2a4a 0%, var(--bg2) 35%, var(--bg1) 100%);
-    display: flex; flex-direction: column; padding: 3.2vh 3vw; gap: 3.5vh;
+    display: flex; flex-direction: column;
+    padding: calc(var(--safe-t) + 3.2 * var(--u)) calc(var(--safe-r) + 3 * var(--u))
+             calc(var(--safe-b) + 3.2 * var(--u)) calc(var(--safe-l) + 3 * var(--u));
+    gap: calc(3 * var(--u));
   }
-  header { display: flex; align-items: center; gap: 3vw; }
-  .clock { min-width: 18vw; }
-  .time { font-size: 8.5vh; font-weight: 300; line-height: 1; letter-spacing: -.02em; }
-  .date { font-size: 2.8vh; color: var(--muted); margin-top: .6vh; }
+  header { display: flex; align-items: center; gap: calc(3 * var(--u)); flex: none; }
+  .clock { flex: none; }
+  .time { font-size: calc(8.5 * var(--u)); font-weight: 300; line-height: 1; letter-spacing: -.02em; }
+  .date { font-size: calc(2.8 * var(--u)); color: var(--muted); margin-top: calc(.6 * var(--u)); white-space: nowrap; }
   .search {
-    flex: 1; height: 9vh; border-radius: 4.5vh; background: var(--card);
-    border: 1px solid rgba(255,255,255,.08);
-    display: flex; align-items: center; gap: 1.5vw; padding: 0 2.2vw;
-    color: var(--muted); font-size: 3.2vh; cursor: pointer;
+    flex: 1; min-width: 0; height: calc(9 * var(--u)); border-radius: calc(4.5 * var(--u));
+    background: var(--card); border: 1px solid rgba(255,255,255,.08);
+    display: flex; align-items: center; gap: calc(1.5 * var(--u)); padding: 0 calc(2.4 * var(--u));
+    color: var(--muted); font-size: calc(3.2 * var(--u)); cursor: pointer;
   }
-  .search svg { width: 3.8vh; height: 3.8vh; flex: none; fill: var(--muted); }
+  .search span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .search svg { width: calc(3.8 * var(--u)); height: calc(3.8 * var(--u)); flex: none; fill: var(--muted); }
   .search:active { background: rgba(255,255,255,.14); }
+  /* Hochformat: Uhr über der Suchleiste */
+  @media (max-aspect-ratio: 1/1) {
+    header { flex-direction: column; align-items: stretch; }
+    .search { flex: none; }
+  }
   main {
-    flex: 1; display: grid; gap: 2.4vh 1.8vw; align-content: center;
-    grid-template-columns: repeat(auto-fit, minmax(17vw, 1fr));
+    flex: 1; min-height: 0; display: grid; justify-content: center; align-content: center;
+    gap: calc(var(--t) * .1);
   }
   .tile {
-    position: relative; border-radius: 3.2vh; padding: 2.4vh 1.6vw;
-    min-height: 25vh; display: flex; flex-direction: column; justify-content: space-between;
+    position: relative; height: var(--t); border-radius: calc(var(--t) * .13);
+    padding: calc(var(--t) * .1);
+    display: flex; flex-direction: column; justify-content: space-between;
     background: linear-gradient(145deg, var(--c1), var(--c2));
-    box-shadow: 0 1vh 3vh rgba(0,0,0,.35); overflow: hidden; cursor: pointer;
-    transition: transform .12s;
+    box-shadow: 0 calc(var(--t) * .04) calc(var(--t) * .12) rgba(0,0,0,.35);
+    overflow: hidden; cursor: pointer; transition: transform .12s;
   }
   .tile:active { transform: scale(.96); }
   .tile::after {
@@ -45,13 +59,13 @@
     pointer-events: none;
   }
   .icon {
-    width: 9vh; height: 9vh; border-radius: 2.2vh; background: rgba(255,255,255,.95);
-    display: grid; place-items: center; overflow: hidden;
-    font-weight: 700; font-size: 4.6vh; color: var(--c1);
+    width: calc(var(--t) * .34); height: calc(var(--t) * .34); border-radius: calc(var(--t) * .08);
+    background: rgba(255,255,255,.95); display: grid; place-items: center; overflow: hidden;
+    font-weight: 700; font-size: calc(var(--t) * .18); color: var(--c1);
   }
   .icon img { width: 70%; height: 70%; object-fit: contain; }
-  .name { font-size: 3.3vh; font-weight: 500; }
-  .host { font-size: 2.2vh; opacity: .7; margin-top: .3vh; }
+  .name { font-size: calc(var(--t) * .12); font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .host { font-size: calc(var(--t) * .075); opacity: .7; margin-top: calc(var(--t) * .015); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 </style>
 </head>
 <body>
@@ -113,10 +127,42 @@
     if (window.AutoStream) AutoStream.openSearch();
   });
 
+  var ASPECT = 1.15; // Breite / Höhe einer Kachel
+
+  /** Wählt Spalten/Zeilen so, dass die Kacheln so groß wie möglich werden. */
+  function layout() {
+    var grid = document.getElementById('grid');
+    var n = grid.children.length;
+    if (!n) return;
+    var W = grid.clientWidth, H = grid.clientHeight;
+    var best = { h: 0, cols: 1 };
+    for (var cols = 1; cols <= n; cols++) {
+      var rows = Math.ceil(n / cols);
+      // Abstand = 10 % der Kachelhöhe: W = cols*h*A + (cols-1)*0.1h
+      var hW = W / (cols * ASPECT + (cols - 1) * 0.1);
+      var hH = H / (rows + (rows - 1) * 0.1);
+      var h = Math.min(hW, hH);
+      if (h > best.h + 0.5) best = { h: h, cols: cols };
+    }
+    var h = Math.floor(Math.min(best.h, H * 0.8));
+    document.documentElement.style.setProperty('--t', h + 'px');
+    grid.style.gridTemplateColumns = 'repeat(' + best.cols + ', ' + Math.floor(h * ASPECT) + 'px)';
+  }
+
+  /** Von der App aufgerufen: Ränder (Gerätepixel), die von Android-Auto-Knöpfen verdeckt sind. */
+  window.setSafeArea = function (l, t, r, b) {
+    var d = window.devicePixelRatio || 1, st = document.documentElement.style;
+    st.setProperty('--safe-l', (l / d) + 'px'); st.setProperty('--safe-t', (t / d) + 'px');
+    st.setProperty('--safe-r', (r / d) + 'px'); st.setProperty('--safe-b', (b / d) + 'px');
+    layout();
+  };
+  window.addEventListener('resize', layout);
+
   var data = [];
   try { data = JSON.parse(window.AutoStream ? AutoStream.shortcuts() : '[]'); } catch (e) {}
   if (!data.length) data = [{ name: 'Netflix', url: 'https://www.netflix.com/browse' }, { name: 'YouTube', url: 'https://www.youtube.com' }];
   render(data);
+  layout();
 </script>
 </body>
 </html>
