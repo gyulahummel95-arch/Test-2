@@ -2,10 +2,14 @@ package com.autostream
 
 import android.Manifest
 import android.app.Activity
+import android.content.ComponentName
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Typeface
+import android.net.Uri
+import android.os.Build
 import android.os.Bundle
+import android.provider.Settings
 import android.text.InputType
 import android.view.ViewGroup.LayoutParams.MATCH_PARENT
 import android.view.ViewGroup.LayoutParams.WRAP_CONTENT
@@ -20,6 +24,7 @@ import android.widget.Toast
 /** Einstellungen auf dem Handy: Verknüpfungen, Login, Berechtigungen. */
 class MainActivity : Activity() {
     private lateinit var list: LinearLayout
+    private lateinit var diagText: TextView
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -60,6 +65,44 @@ class MainActivity : Activity() {
             }
         })
 
+        root.addView(Switch(this).apply {
+            text = "Ton während der Fahrt weiterspielen (Bild bleibt gesperrt)"
+            isChecked = Shortcuts.audioWhileDriving(this@MainActivity)
+            setOnCheckedChangeListener { _, checked ->
+                Shortcuts.setAudioWhileDriving(this@MainActivity, checked)
+            }
+        })
+
+        if (isXiaomi()) {
+            root.addView(header("Xiaomi / Redmi / POCO"))
+            root.addView(TextView(this).apply {
+                text = "MIUI/HyperOS beendet Apps im Hintergrund. Bitte alle drei einstellen:"
+            })
+            root.addView(Button(this).apply {
+                text = "1. Autostart erlauben"
+                setOnClickListener { openXiaomiAutostart() }
+            })
+            root.addView(Button(this).apply {
+                text = "2. Akku: „Keine Einschränkungen“"
+                setOnClickListener { openAppDetails() }
+            })
+            root.addView(Button(this).apply {
+                text = "3. „Pop-up-Fenster im Hintergrund“ erlauben"
+                setOnClickListener { openXiaomiPermissions() }
+            })
+        }
+
+        root.addView(header("Diagnose (letzte Verbindung)"))
+        diagText = TextView(this).apply { setTextIsSelectable(true) }
+        root.addView(diagText)
+        root.addView(Button(this).apply {
+            text = "Diagnose zurücksetzen"
+            setOnClickListener {
+                Diagnostics.clear(context)
+                refreshDiagnostics()
+            }
+        })
+
         root.addView(header("Verknüpfungen"))
         list = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
         root.addView(list)
@@ -92,9 +135,45 @@ class MainActivity : Activity() {
 
     override fun onResume() {
         super.onResume()
+        refreshDiagnostics()
         if (checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             Toast.makeText(this, "Bitte Standort erlauben – sonst bleibt die Videowiedergabe im Auto gesperrt.", Toast.LENGTH_LONG).show()
         }
+    }
+
+    private fun refreshDiagnostics() {
+        val perm = checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) ==
+            PackageManager.PERMISSION_GRANTED
+        diagText.text = Diagnostics.report(this) +
+            "\nStandort-Berechtigung: ${if (perm) "erteilt" else "FEHLT"}" +
+            "\nHandy: ${Build.MANUFACTURER} ${Build.MODEL}, Android ${Build.VERSION.RELEASE}"
+    }
+
+    private fun isXiaomi() = Build.MANUFACTURER.lowercase().let {
+        it.contains("xiaomi") || it.contains("redmi") || it.contains("poco")
+    }
+
+    private fun tryStart(intent: Intent): Boolean = try {
+        startActivity(intent); true
+    } catch (e: Exception) {
+        false
+    }
+
+    private fun openAppDetails() {
+        tryStart(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:$packageName")))
+    }
+
+    private fun openXiaomiAutostart() {
+        val ok = tryStart(Intent().setComponent(ComponentName(
+            "com.miui.securitycenter", "com.miui.permcenter.autostart.AutoStartManagementActivity"
+        )))
+        if (!ok) openAppDetails()
+    }
+
+    private fun openXiaomiPermissions() {
+        val ok = tryStart(Intent("miui.intent.action.APP_PERM_EDITOR")
+            .putExtra("extra_pkgname", packageName))
+        if (!ok) openAppDetails()
     }
 
     private fun header(t: String) = TextView(this).apply {

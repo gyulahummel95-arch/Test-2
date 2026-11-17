@@ -12,6 +12,8 @@ import android.util.Log
 import androidx.car.app.SurfaceContainer
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
+import com.autostream.Diagnostics
+import com.autostream.Shortcuts
 import org.junit.After
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -186,7 +188,7 @@ class WebRendererTest {
         SystemClock.sleep(4000)
         save("00_startseite")
         val count = js("document.querySelectorAll('.tile').length")
-        assertTrue("Kacheln fehlen: $count", count == "5")
+        assertTrue("Kacheln fehlen: $count", count == Shortcuts.load(context).size.toString())
         val (x, y) = tileCenter(".tile")
         r.onClick(x, y)
         var href: String? = null
@@ -242,7 +244,12 @@ class WebRendererTest {
               var inside=tiles.every(function(b){return b.left>=0&&b.top>=0&&b.right<=W+1&&b.bottom<=H+1;});
               var overlap=tiles.some(function(b){return b.top < s.bottom;});
               var minH=Math.min.apply(null,tiles.map(function(b){return b.height;}));
-              return [inside?1:0, overlap?1:0, minH/H, s.right*d, tiles.length, s.height*d].join(',');
+              var lastTop=Math.max.apply(null,tiles.map(function(b){return b.top;}));
+              var last=tiles.filter(function(b){return Math.abs(b.top-lastTop)<2;});
+              var all=document.getElementById('area').getBoundingClientRect();
+              var rowMid=(Math.min.apply(null,last.map(function(b){return b.left;}))+Math.max.apply(null,last.map(function(b){return b.right;})))/2;
+              var off=Math.abs(rowMid-(all.left+all.right)/2);
+              return [inside?1:0, overlap?1:0, minH/Math.min(W,H), s.right*d, tiles.length, s.height*d, off].join(',');
             })()
         """.trimIndent())!!.trim('"')
         Log.i(TAG, "LAYOUT $label: $result")
@@ -251,7 +258,8 @@ class WebRendererTest {
         assertTrue("$label: Kacheln überlappen Suchleiste", p[1] == "0")
         assertTrue("$label: Kacheln zu klein (${p[2]})", p[2].toFloat() >= 0.18f)
         assertTrue("$label: Suchleiste verdeckt (${p[3]} > $rightLimitPx)", p[3].toFloat() <= rightLimitPx + 1)
-        assertTrue("$label: Kacheln fehlen", p[4] == "5")
+        assertTrue("$label: Kacheln fehlen (${p[4]})", p[4] == Shortcuts.load(context).size.toString())
+        assertTrue("$label: letzte Reihe nicht mittig (${p[6]} px daneben)", p[6].toFloat() <= 3f)
         assertTrue("$label: Suchleiste zu klein zum Tippen (${p[5]}px)", p[5].toFloat() >= 40f)
     }
 
@@ -282,6 +290,47 @@ class WebRendererTest {
         SystemClock.sleep(1500)
         checkLauncherLayout("1280x720 mit Knopfleiste", rightLimitPx = 1280 - 220)
         save("21_startseite_mit_knopfleiste")
+    }
+
+    private val pauseCountingPage = page(
+        "<body style='margin:0;background:#ff0000;height:100vh'>" +
+            "<script>window.pauses=0;HTMLMediaElement.prototype.pause=function(){window.pauses++;};</script>" +
+            "<video></video></body>"
+    )
+
+    @Test fun audioKeepsPlayingWhileDrivingByDefault() {
+        Shortcuts.setAudioWhileDriving(context, true)
+        val r = start(pauseCountingPage)
+        waitFor("rot sichtbar") { near(it, 255, 0, 0) }
+        r.setMotionState(MotionState.MOVING)
+        waitFor("während Fahrt abgedeckt") { c -> c != null && Color.red(c) < 60 }
+        SystemClock.sleep(800)
+        assertTrue("Video wurde pausiert, obwohl Ton weiterlaufen soll", js("window.pauses") == "0")
+        save("06_fahrt_ton_laeuft")
+    }
+
+    @Test fun audioStopsWhileDrivingWhenDisabled() {
+        Shortcuts.setAudioWhileDriving(context, false)
+        try {
+            val r = start(pauseCountingPage)
+            waitFor("rot sichtbar") { near(it, 255, 0, 0) }
+            r.setMotionState(MotionState.MOVING)
+            waitFor("während Fahrt abgedeckt") { c -> c != null && Color.red(c) < 60 }
+            SystemClock.sleep(800)
+            val pauses = js("window.pauses")?.toIntOrNull() ?: 0
+            assertTrue("Video hätte pausiert werden müssen", pauses >= 1)
+        } finally {
+            Shortcuts.setAudioWhileDriving(context, true)
+        }
+    }
+
+    @Test fun diagnosticsRecordCarDisplay() {
+        Diagnostics.clear(context)
+        start(redPageGreenOnClick, width = 1280, height = 720, dpi = 213)
+        waitFor("rot sichtbar") { near(it, 255, 0, 0) }
+        val surface = Diagnostics.get(context, Diagnostics.SURFACE)
+        Log.i(TAG, "DIAGNOSE: ${Diagnostics.report(context)}")
+        assertTrue("Diagnose fehlt: $surface", surface?.contains("1280 × 720, 213 dpi") == true)
     }
 
     /** Info-Test: Welche Widevine-Stufen bietet die WebView auf dem Autodisplay? */

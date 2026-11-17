@@ -11,12 +11,15 @@ object Shortcuts {
     private const val PREFS = "autostream"
     private const val KEY_LIST = "shortcuts"
     private const val KEY_DESKTOP = "desktop_mode"
+    private const val KEY_AUDIO_DRIVING = "audio_while_driving"
 
     private val defaults = listOf(
         Shortcut("Netflix", "https://www.netflix.com/browse"),
         Shortcut("YouTube", "https://www.youtube.com"),
         Shortcut("Disney+", "https://www.disneyplus.com"),
         Shortcut("Prime Video", "https://www.primevideo.com"),
+        Shortcut("HBO Max", "https://www.hbomax.com"),
+        Shortcut("Paramount+", "https://www.paramountplus.com"),
         Shortcut("Twitch", "https://www.twitch.tv"),
     )
 
@@ -42,6 +45,12 @@ object Shortcuts {
     }
 
     fun desktopMode(c: Context) = prefs(c).getBoolean(KEY_DESKTOP, true)
+
+    /** Ton bei Fahrt weiterspielen (Bild bleibt abgedeckt). */
+    fun audioWhileDriving(c: Context) = prefs(c).getBoolean(KEY_AUDIO_DRIVING, true)
+
+    fun setAudioWhileDriving(c: Context, value: Boolean) =
+        prefs(c).edit().putBoolean(KEY_AUDIO_DRIVING, value).apply()
 
     fun setDesktopMode(c: Context, value: Boolean) =
         prefs(c).edit().putBoolean(KEY_DESKTOP, value).apply()

@@ -27,6 +27,7 @@ import android.widget.FrameLayout
 import android.widget.TextView
 import androidx.car.app.SurfaceCallback
 import androidx.car.app.SurfaceContainer
+import com.autostream.Diagnostics
 import com.autostream.Shortcuts
 import com.autostream.WebConfig
 import org.json.JSONArray
@@ -106,7 +107,7 @@ class WebRenderer(
 
         @JavascriptInterface
         fun mediaStarted() {
-            main.post { if (!blocked) requestAudioFocus() }
+            main.post { if (!blocked || audioWhileDriving()) requestAudioFocus() }
         }
     }
 
@@ -116,6 +117,8 @@ class WebRenderer(
             releaseDisplay()
             surfaceWidth = container.width
             surfaceHeight = container.height
+            Diagnostics.set(context, Diagnostics.SURFACE,
+                "${container.width} × ${container.height}, ${container.dpi} dpi")
             val dm = context.getSystemService(DisplayManager::class.java)
             val vd = dm.createVirtualDisplay(
                 "AutoStream", container.width, container.height, container.dpi,
@@ -129,6 +132,7 @@ class WebRenderer(
                 }
             } catch (e: Exception) {
                 Log.e(TAG, "Presentation konnte nicht angezeigt werden", e)
+                Diagnostics.set(context, Diagnostics.ERROR, "Anzeige fehlgeschlagen: ${e.javaClass.simpleName}: ${e.message}")
             }
         }
     }
@@ -137,6 +141,7 @@ class WebRenderer(
     override fun onVisibleAreaChanged(visibleArea: Rect) {
         main.post {
             this.visibleArea = Rect(visibleArea)
+            Diagnostics.set(context, Diagnostics.VISIBLE, visibleArea.toShortString())
             applySafeArea()
         }
     }
@@ -199,7 +204,10 @@ class WebRenderer(
 
     fun togglePlay() {
         main.post {
-            if (!blocked) presentation?.webView?.evaluateJavascript(WebConfig.JS_TOGGLE_PLAY, null)
+            // Bei Fahrt nur, wenn der Ton weiterlaufen darf (wie beim Radio).
+            if (!blocked || audioWhileDriving()) {
+                presentation?.webView?.evaluateJavascript(WebConfig.JS_TOGGLE_PLAY, null)
+            }
         }
     }
 
@@ -210,6 +218,8 @@ class WebRenderer(
             if (wv == null) callback(null) else wv.evaluateJavascript(js) { callback(it) }
         }
     }
+
+    private fun audioWhileDriving() = Shortcuts.audioWhileDriving(context)
 
     fun release() {
         main.post { releaseDisplay() }
@@ -273,15 +283,19 @@ class WebRenderer(
         fun applyMotion() {
             if (!::overlay.isInitialized) return
             if (blocked) {
+                val keepAudio = audioWhileDriving()
+                val hint = if (keepAudio) "\n\nTon läuft weiter." else ""
                 overlay.text = if (motion == MotionState.MOVING)
-                    "Wiedergabe nur im Stand.\nBitte anhalten."
+                    "Bild nur im Stand.$hint"
                 else
-                    "Warte auf Stillstand-Erkennung …\n(Standort in der Handy-App erlauben)"
+                    "Warte auf Stillstand-Erkennung …\n(Standort erlauben oder Auto parken)$hint"
                 overlay.visibility = View.VISIBLE
                 overlay.bringToFront()
-                webView?.evaluateJavascript(WebConfig.JS_PAUSE_ALL, null)
-                webView?.onPause()
-                abandonAudioFocus()
+                if (!keepAudio) {
+                    webView?.evaluateJavascript(WebConfig.JS_PAUSE_ALL, null)
+                    webView?.onPause()
+                    abandonAudioFocus()
+                }
             } else {
                 overlay.visibility = View.GONE
                 webView?.onResume()

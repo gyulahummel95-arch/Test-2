@@ -10,7 +10,7 @@
     /* Grundeinheit: skaliert mit der kürzeren Seite, passt auf Breit- und Hochformat */
     --u: min(1vh, 1.25vw);
     --safe-l: 0px; --safe-t: 0px; --safe-r: 0px; --safe-b: 0px;
-    --t: 160px; /* Kachelhöhe, wird per JS berechnet */
+    --t: 160px; --tw: 184px; /* Kachelgröße, wird per JS berechnet */
   }
   * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
   html, body { height: 100%; overflow: hidden; }
@@ -41,11 +41,15 @@
     .search { flex: none; }
   }
   main {
-    flex: 1; min-height: 0; display: grid; justify-content: center; align-content: center;
+    flex: 1; min-height: 0; display: flex; align-items: center; justify-content: center;
+  }
+  /* Flex statt Grid: eine unvollständige letzte Reihe steht mittig */
+  #grid {
+    display: flex; flex-wrap: wrap; justify-content: center; align-content: center;
     gap: calc(var(--t) * .1);
   }
   .tile {
-    position: relative; height: var(--t); border-radius: calc(var(--t) * .13);
+    position: relative; height: var(--t); width: var(--tw); flex: none; border-radius: calc(var(--t) * .13);
     padding: calc(var(--t) * .1);
     display: flex; flex-direction: column; justify-content: space-between;
     background: linear-gradient(145deg, var(--c1), var(--c2));
@@ -79,13 +83,15 @@
     <span>Adresse oder Suche</span>
   </div>
 </header>
-<main id="grid"></main>
+<main id="area"><div id="grid"></div></main>
 <script>
   var COLORS = {
     'netflix': ['#e50914', '#5c0408'], 'youtube': ['#ff2d2d', '#7a0d0d'],
     'disneyplus': ['#1a3fa8', '#0b1a4a'], 'primevideo': ['#1399ff', '#0a3a66'],
     'twitch': ['#9146ff', '#3b1a73'], 'ardmediathek': ['#0b5fb3', '#062b52'],
-    'zdf': ['#fa7d19', '#7a3a08'], 'joyn': ['#ff3e6c', '#5e1530']
+    'zdf': ['#fa7d19', '#7a3a08'], 'joyn': ['#ff3e6c', '#5e1530'],
+    'hbomax': ['#4b2bd6', '#140a4a'], 'max': ['#2a4bd6', '#0a144a'],
+    'paramountplus': ['#0064ff', '#001f5c'], 'rtlplus': ['#e5007d', '#4a0028']
   };
   var FALLBACK = [['#2d6cdf','#122a5c'], ['#14a37f','#08453a'], ['#d9822b','#5a3410'], ['#8e44ad','#3a1a4a']];
 
@@ -134,7 +140,8 @@
     var grid = document.getElementById('grid');
     var n = grid.children.length;
     if (!n) return;
-    var W = grid.clientWidth, H = grid.clientHeight;
+    var area = document.getElementById('area');
+    var W = area.clientWidth, H = area.clientHeight;
     var best = { h: 0, cols: 1 };
     for (var cols = 1; cols <= n; cols++) {
       var rows = Math.ceil(n / cols);
@@ -145,8 +152,12 @@
       if (h > best.h + 0.5) best = { h: h, cols: cols };
     }
     var h = Math.floor(Math.min(best.h, H * 0.8));
-    document.documentElement.style.setProperty('--t', h + 'px');
-    grid.style.gridTemplateColumns = 'repeat(' + best.cols + ', ' + Math.floor(h * ASPECT) + 'px)';
+    var tw = Math.floor(h * ASPECT), gap = h * 0.1;
+    var st = document.documentElement.style;
+    st.setProperty('--t', h + 'px');
+    st.setProperty('--tw', tw + 'px');
+    // Breite genau für "cols" Kacheln, damit der Umbruch an der richtigen Stelle passiert
+    grid.style.width = Math.ceil(best.cols * tw + (best.cols - 1) * gap + 1) + 'px';
   }
 
   /** Von der App aufgerufen: Ränder (Gerätepixel), die von Android-Auto-Knöpfen verdeckt sind. */
