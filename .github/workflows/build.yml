@@ -16,11 +16,11 @@ jobs:
       - uses: gradle/actions/setup-gradle@v5
       - name: Build debug APK and run unit tests
         run: chmod +x gradlew && ./gradlew assembleDebug testDebugUnitTest --no-daemon
-      - uses: actions/upload-artifact@v5
+      - uses: actions/upload-artifact@v6
         with:
           name: AutoStream-debug-apk
           path: app/build/outputs/apk/debug/*.apk
-      - uses: actions/upload-artifact@v5
+      - uses: actions/upload-artifact@v6
         if: always()
         with:
           name: unit-test-report
@@ -50,7 +50,7 @@ jobs:
           emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim
           disable-animations: true
           script: chmod +x gradlew ci/run-instrumented.sh && ./ci/run-instrumented.sh
-      - uses: actions/upload-artifact@v5
+      - uses: actions/upload-artifact@v6
         if: always()
         with:
           name: emulator-test-output
