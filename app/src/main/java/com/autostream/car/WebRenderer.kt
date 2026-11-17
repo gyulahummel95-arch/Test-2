@@ -285,10 +285,10 @@ class WebRenderer(
             root.addView(overlay, FrameLayout.LayoutParams(MATCH_PARENT, MATCH_PARENT))
             setContentView(root)
             wv.addJavascriptInterface(JsBridge(), "AutoStream")
-            WebConfig.configure(wv, desktop, root) { view ->
+            WebConfig.configure(wv, desktop, root, onPageFinished = { view ->
                 view.evaluateJavascript(WebConfig.JS_REPORT_PLAY, null)
                 applySafeArea()
-            }
+            })
             wv.loadUrl(url)
             webView = wv
             overlay.bringToFront()
