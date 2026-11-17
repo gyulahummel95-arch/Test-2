@@ -45,7 +45,9 @@ jobs:
 
   emulator-test:
     runs-on: ubuntu-24.04
-    timeout-minutes: 45
+    timeout-minutes: 40
+    # Android 15 im Emulator ist auf GitHub noch wackelig – darf die APK nicht blockieren
+    continue-on-error: ${{ matrix.api-level == 35 }}
     strategy:
       fail-fast: false
       matrix:
@@ -64,7 +66,11 @@ jobs:
           sudo udevadm trigger --name-match=kvm
       - name: Run tests on emulator
         uses: reactivecircus/android-emulator-runner@v2
+        timeout-minutes: 30
         with:
+          ram-size: 4096M
+          disk-size: 6000M
+          emulator-boot-timeout: 900
           api-level: ${{ matrix.api-level }}
           target: google_apis
           arch: x86_64

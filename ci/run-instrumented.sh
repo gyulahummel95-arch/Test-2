@@ -1,7 +1,8 @@
 #!/bin/sh
 # Läuft im Emulator-Job: Tests ausführen, Screenshots, Logs und Absturzursachen einsammeln.
 adb logcat -c || true
-./gradlew connectedDebugAndroidTest --no-daemon
+# Harte Grenze, damit ein hängender Test nicht den ganzen Lauf blockiert
+timeout 1200 ./gradlew connectedDebugAndroidTest --no-daemon
 code=$?
 mkdir -p test-output
 adb pull /sdcard/Download/autostream-test test-output/ || true
