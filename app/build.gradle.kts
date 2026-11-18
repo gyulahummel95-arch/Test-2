@@ -11,8 +11,10 @@ android {
         applicationId = "com.autostream"
         minSdk = 26
         targetSdk = 35
-        versionCode = 1
-        versionName = "1.0"
+        // Build-Nummer von GitHub, damit man in Android Auto sieht, welche Version installiert ist
+        val run = System.getenv("GITHUB_RUN_NUMBER")?.toIntOrNull() ?: 1
+        versionCode = run
+        versionName = "1.0.$run"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
