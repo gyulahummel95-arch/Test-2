@@ -13,4 +13,4 @@ dependencyResolutionManagement {
     }
 }
 rootProject.name = "AutoStream"
-include(":app")
+include(":app", ":probe")

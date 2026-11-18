@@ -18,5 +18,8 @@ class StreamCarAppService : CarAppService() {
 
     private fun createSession(): Session = object : Session() {
         override fun onCreateScreen(intent: Intent): Screen = BrowserScreen(carContext, WebRenderer.LAUNCHER_URL)
+
+        // Navigationsziel (geo:) von Android Auto – AutoStream navigiert nicht, bleibt auf der Startseite.
+        override fun onNewIntent(intent: Intent) = Unit
     }
 }
